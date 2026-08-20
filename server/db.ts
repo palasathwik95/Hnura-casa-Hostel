@@ -1,0 +1,1451 @@
+import fs from 'fs';
+import path from 'path';
+import {
+  Floor,
+  Room,
+  Bed,
+  Resident,
+  Payment,
+  AdvanceAccount,
+  Expense,
+  Staff,
+  SalaryPayment,
+  MaintenanceRequest,
+  Complaint,
+  ResidentDocument,
+  RoomAssignment,
+  WhatsAppMessage,
+  NotificationItem,
+  AuditLog,
+  SystemSettings,
+  DashboardMetrics
+} from '../src/types';
+import {
+  generateFloorsAndRooms,
+  initialResidentsData,
+  initialStaffData,
+  initialComplaintsData,
+  initialMaintenanceData,
+  initialSettings
+} from './initialData';
+
+export interface DatabaseSchema {
+  settings: SystemSettings;
+  floors: Floor[];
+  rooms: Room[];
+  beds: Bed[];
+  residents: Resident[];
+  payments: Payment[];
+  advances: AdvanceAccount[];
+  expenses: Expense[];
+  staff: Staff[];
+  salary_payments: SalaryPayment[];
+  maintenance_requests: MaintenanceRequest[];
+  complaints: Complaint[];
+  resident_documents: ResidentDocument[];
+  room_assignments: RoomAssignment[];
+  whatsapp_messages: WhatsAppMessage[];
+  notifications: NotificationItem[];
+  audit_logs: AuditLog[];
+}
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'hanuradb.json');
+
+class DatabaseService {
+  private data!: DatabaseSchema;
+
+  constructor() {
+    this.init();
+  }
+
+  private init() {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    if (fs.existsSync(DB_FILE)) {
+      try {
+        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
+        this.data = JSON.parse(fileContent);
+        if (this.data && this.data.settings) {
+          this.data.settings.whatsapp_api_configured = true;
+        }
+        console.log('✅ Hanura Casa database loaded from persistent disk storage.');
+        return;
+      } catch (err) {
+        console.error('⚠️ Could not parse existing db file, reseeding fresh dataset...', err);
+      }
+    }
+
+    this.seedInitialDatabase();
+    this.saveToDisk();
+    console.log('✅ Hanura Casa database initialized with synchronized demo seed data.');
+  }
+
+  private saveToDisk() {
+    try {
+      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+    } catch (err) {
+      console.error('Failed to write to db file:', err);
+    }
+  }
+
+  public seedInitialDatabase() {
+    const { floors, rooms, beds } = generateFloorsAndRooms();
+    const residents: Resident[] = [];
+    const payments: Payment[] = [];
+    const advances: AdvanceAccount[] = [];
+    const room_assignments: RoomAssignment[] = [];
+    const resident_documents: ResidentDocument[] = [];
+    const audit_logs: AuditLog[] = [];
+    const notifications: NotificationItem[] = [];
+
+    // Helper map for fast room lookup
+    const roomMap = new Map<string, Room>();
+    rooms.forEach(r => roomMap.set(r.room_number, r));
+
+    const bedMap = new Map<string, Bed>();
+    beds.forEach(b => bedMap.set(b.id, b));
+
+    // Seed Residents
+    initialResidentsData.forEach(item => {
+      const room = roomMap.get(item.targetRoom);
+      let assignedBedId: string | null = null;
+      let assignedBedNumber: number | null = null;
+
+      if (room && !item.isVacated) {
+        const targetBed = room.beds.find(b => b.bed_number === item.targetBed);
+        if (targetBed) {
+          targetBed.status = 'OCCUPIED';
+          targetBed.current_resident_id = item.id!;
+          targetBed.current_resident_name = item.name!;
+          assignedBedId = targetBed.id;
+          assignedBedNumber = targetBed.bed_number;
+          
+          const bedInGlobal = bedMap.get(targetBed.id);
+          if (bedInGlobal) {
+            bedInGlobal.status = 'OCCUPIED';
+            bedInGlobal.current_resident_id = item.id!;
+            bedInGlobal.current_resident_name = item.name!;
+          }
+        }
+      }
+
+      const resident: Resident = {
+        id: item.id!,
+        name: item.name!,
+        photo_url: item.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+        phone: item.phone!,
+        whatsapp: item.whatsapp || item.phone!,
+        email: item.email || '',
+        college: item.college || '',
+        course: item.course || '',
+        academic_year: item.academic_year || '3rd Year',
+        date_of_birth: item.date_of_birth || '2004-01-01',
+        parent_name: item.parent_name || '',
+        parent_phone: item.parent_phone || '',
+        emergency_contact: item.emergency_contact || '',
+        permanent_address: item.permanent_address || '',
+        joining_date: item.joining_date || '2025-08-01',
+        current_room_id: item.isVacated ? null : (room ? room.id : null),
+        current_room_number: item.isVacated ? null : (room ? room.room_number : null),
+        current_bed_id: item.isVacated ? null : assignedBedId,
+        current_bed_number: item.isVacated ? null : assignedBedNumber,
+        floor_number: item.isVacated ? null : (room ? room.floor_number : null),
+        sharing_type: item.sharing_type || (room ? room.sharing_type : '4-Sharing'),
+        monthly_fee: item.monthly_fee || (room ? room.monthly_fee : 6500),
+        status: item.isVacated ? 'VACATED' : 'ACTIVE',
+        vacated_date: item.isVacated ? '2026-06-30' : null,
+        vacated_reason: item.isVacated ? 'Course Completed / Relocated' : null,
+        kyc_status: item.kyc_status || 'VERIFIED',
+        kyc_completion: item.kyc_completion || 100,
+        created_at: item.joining_date ? `${item.joining_date}T10:00:00.000Z` : '2025-08-01T10:00:00.000Z',
+        updated_at: new Date().toISOString()
+      };
+
+      residents.push(resident);
+
+      // Room assignment history
+      if (room) {
+        room_assignments.push({
+          id: `ASN-${item.id}-01`,
+          resident_id: resident.id,
+          resident_name: resident.name,
+          room_id: room.id,
+          room_number: room.room_number,
+          bed_id: assignedBedId || `bed_${room.room_number}_${item.targetBed}`,
+          bed_number: item.targetBed,
+          start_date: resident.joining_date,
+          end_date: item.isVacated ? '2026-06-30' : null,
+          status: item.isVacated ? 'VACATED' : 'ACTIVE'
+        });
+      }
+
+      // Advances
+      const advAccount: AdvanceAccount = {
+        id: `ADV-${resident.id}`,
+        resident_id: resident.id,
+        resident_name: resident.name,
+        opening_advance: item.openAdvance || 6000,
+        current_advance: item.openAdvance || 6000,
+        transactions: [
+          {
+            id: `ADV-TXN-${resident.id}-01`,
+            type: 'DEPOSIT',
+            amount: item.openAdvance || 6000,
+            date: resident.joining_date,
+            reference: `ADV-INIT-${resident.id}`,
+            notes: 'Security deposit received at check-in',
+            balance_after: item.openAdvance || 6000
+          }
+        ]
+      };
+      advances.push(advAccount);
+
+      // Seed Documents
+      resident_documents.push(
+        {
+          id: `DOC-${resident.id}-01`,
+          resident_id: resident.id,
+          document_type: 'AADHAAR',
+          document_name: 'Aadhaar_Card_Front_Back.pdf',
+          document_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+          file_size: '1.4 MB',
+          uploaded_at: resident.created_at,
+          verified_by: 'Sathwik Pala',
+          verified_at: '2025-08-05T14:30:00.000Z',
+          status: 'VERIFIED'
+        },
+        {
+          id: `DOC-${resident.id}-02`,
+          resident_id: resident.id,
+          document_type: 'COLLEGE_ID',
+          document_name: 'College_Student_ID.jpg',
+          document_url: 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=800&auto=format&fit=crop&q=80',
+          file_size: '850 KB',
+          uploaded_at: resident.created_at,
+          verified_by: 'Sathwik Pala',
+          verified_at: '2025-08-05T14:31:00.000Z',
+          status: 'VERIFIED'
+        }
+      );
+
+      // Seed Payments for months (2026-05, 2026-06, 2026-07, 2026-08)
+      const months = ['2026-05', '2026-06', '2026-07', '2026-08'];
+      months.forEach((m, idx) => {
+        let paid = resident.monthly_fee;
+        let bal = 0;
+
+        if (resident.id === 'RES-1001' && m === '2026-08') {
+          paid = 5000; // Partial payment for Rahul in Aug 2026 test
+          bal = 1500;
+        } else if (resident.id === 'RES-1004' && m === '2026-08') {
+          paid = 0; // Pending for Suresh
+          bal = resident.monthly_fee;
+        } else if (resident.id === 'RES-1009' && m === '2026-08') {
+          paid = 3000;
+          bal = 2500;
+        }
+
+        if (item.isVacated && (m === '2026-07' || m === '2026-08')) {
+          return; // No payments after vacated
+        }
+
+        if (paid > 0) {
+          payments.push({
+            id: `PAY-${m.replace('-', '')}-${resident.id.replace('RES-', '')}`,
+            resident_id: resident.id,
+            resident_name: resident.name,
+            room_id: room ? room.id : 'room_204',
+            room_number: room ? room.room_number : '204',
+            month: m,
+            expected_amount: resident.monthly_fee,
+            amount_paid: paid,
+            advance_used: 0,
+            balance: bal,
+            payment_date: `${m}-0${idx + 3}T11:00:00.000Z`,
+            payment_method: idx % 2 === 0 ? 'UPI' : 'Bank Transfer',
+            transaction_reference: `UPI/${m.replace('-', '')}/${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+            notes: `Monthly fee for ${m}`,
+            recorded_by: 'Sathwik Pala',
+            created_at: `${m}-0${idx + 3}T11:05:00.000Z`
+          });
+        }
+      });
+    });
+
+    // Recalculate room counts
+    rooms.forEach(r => {
+      const occ = r.beds.filter(b => b.status === 'OCCUPIED').length;
+      r.occupied_beds_count = occ;
+      r.vacant_beds_count = r.capacity - occ;
+      if (occ === r.capacity) {
+        r.status = 'FULL';
+      } else {
+        r.status = 'AVAILABLE';
+      }
+    });
+
+    // Expenses Seed Data
+    const expenses: Expense[] = [
+      {
+        id: 'EXP-2026-08-01',
+        category: 'GROCERY',
+        subcategory: 'Vegetables & Provisions',
+        amount: 14500,
+        date: '2026-08-02T08:30:00.000Z',
+        vendor: 'Sri Lakshmi Wholesale Mandi',
+        payment_method: 'UPI',
+        description: 'Bi-weekly bulk grocery purchase for hostel mess',
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-02T08:35:00.000Z',
+        items: [
+          { id: '1', name: 'Sonamasuri Rice (25kg bags)', quantity: 4, unit: 'bags', unit_price: 1450, total: 5800 },
+          { id: '2', name: 'Nandini Toned Milk', quantity: 80, unit: 'liters', unit_price: 44, total: 3520 },
+          { id: '3', name: 'Fresh Farm Chicken', quantity: 15, unit: 'kg', unit_price: 220, total: 3300 },
+          { id: '4', name: 'Assorted Fresh Vegetables', quantity: 45, unit: 'kg', unit_price: 42, total: 1880 }
+        ]
+      },
+      {
+        id: 'EXP-2026-08-02',
+        category: 'ELECTRICITY',
+        subcategory: 'Commercial Electricity Bill',
+        amount: 42800,
+        date: '2026-08-05T10:00:00.000Z',
+        vendor: 'TSSPDCL Hyderabad',
+        payment_method: 'Bank Transfer',
+        description: 'Monthly electricity bill for all 4 floors (Meter #772910)',
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-05T10:05:00.000Z'
+      },
+      {
+        id: 'EXP-2026-08-03',
+        category: 'INTERNET',
+        subcategory: 'Dedicated Leased Fiber Line',
+        amount: 9440,
+        date: '2026-08-01T12:00:00.000Z',
+        vendor: 'ACT Fibernet Commercial',
+        payment_method: 'UPI',
+        description: '500 Mbps high speed dedicated line with static IP',
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-01T12:05:00.000Z'
+      },
+      {
+        id: 'EXP-2026-08-04',
+        category: 'GAS',
+        subcategory: 'Commercial LPG Cylinders',
+        amount: 12600,
+        date: '2026-08-06T15:00:00.000Z',
+        vendor: 'Indane Commercial Gas Agency',
+        payment_method: 'UPI',
+        description: '7 commercial 19kg gas cylinders for kitchen',
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-06T15:05:00.000Z'
+      },
+      {
+        id: 'EXP-2026-08-05',
+        category: 'MAINTENANCE',
+        subcategory: 'AC Servicing & Plumbing',
+        amount: 4500,
+        date: '2026-08-11T16:30:00.000Z',
+        vendor: 'Naveen Chary / Metro Spares',
+        payment_method: 'Cash',
+        description: 'AC gas refill and washroom spare replacement',
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-11T16:35:00.000Z'
+      }
+    ];
+
+    // Staff Salaries Seed
+    const staff = initialStaffData;
+    const salary_payments: SalaryPayment[] = [];
+    staff.forEach(s => {
+      salary_payments.push({
+        id: `SAL-2026-07-${s.id}`,
+        staff_id: s.id,
+        staff_name: s.name,
+        staff_role: s.role,
+        month: '2026-07',
+        salary: s.monthly_salary,
+        advance: 0,
+        deduction: 0,
+        paid: s.monthly_salary,
+        balance: 0,
+        payment_date: '2026-08-01T10:00:00.000Z',
+        payment_method: 'Bank Transfer',
+        transaction_ref: `SAL-REF-${s.id}-JULY`,
+        status: 'PAID'
+      });
+      // Also add staff salary into total expenses for July
+      expenses.push({
+        id: `EXP-SAL-2026-07-${s.id}`,
+        category: 'SALARIES',
+        subcategory: `Monthly Salary - ${s.role}`,
+        amount: s.monthly_salary,
+        date: '2026-08-01T10:00:00.000Z',
+        vendor: s.name,
+        payment_method: 'Bank Transfer',
+        description: `July 2026 salary for ${s.name} (${s.role})`,
+        created_by: 'Sathwik Pala',
+        created_at: '2026-08-01T10:00:00.000Z'
+      });
+    });
+
+    // WhatsApp Message History
+    const whatsapp_messages: WhatsAppMessage[] = [
+      {
+        id: 'WA-2026-001',
+        resident_id: 'RES-1001',
+        resident_name: 'Rahul Sharma',
+        phone: '+91 98451 22345',
+        message_type: 'PAYMENT_CONFIRMATION',
+        template_name: 'payment_confirmation_v1',
+        message_content: 'Hi Rahul Sharma,\n\nYour payment of ₹5,000 for August 2026 has been recorded successfully.\n\nThank you for choosing Hanura Casa.',
+        sent_at: '2026-08-04T11:10:00.000Z',
+        status: 'DELIVERED'
+      },
+      {
+        id: 'WA-2026-002',
+        resident_id: 'RES-1004',
+        resident_name: 'Suresh Kumar',
+        phone: '+91 94401 23456',
+        message_type: 'PAYMENT_REMINDER',
+        template_name: 'payment_reminder_v1',
+        message_content: 'Hi Suresh Kumar,\n\nYour Hanura Casa fee for August 2026 is ₹5,500.\nPaid: ₹0\nBalance: ₹5,500\n\nPlease clear the pending amount.\n\nThank you,\nHanura Casa',
+        sent_at: '2026-08-10T10:00:00.000Z',
+        status: 'DELIVERED'
+      }
+    ];
+
+    // Notifications
+    notifications.push(
+      {
+        id: 'NOTIF-01',
+        type: 'PENDING_PAYMENT',
+        title: 'Pending Fee for August',
+        message: 'Rahul Sharma has a remaining balance of ₹1,500 for August 2026.',
+        timestamp: '2026-08-15T09:00:00.000Z',
+        is_read: false,
+        link_tab: 'payments',
+        related_id: 'RES-1001'
+      },
+      {
+        id: 'NOTIF-02',
+        type: 'COMPLAINT',
+        title: 'New Complaint Logged',
+        message: 'Washroom tap dripping in Room 102 reported by Sneha Patel.',
+        timestamp: '2026-08-19T14:20:00.000Z',
+        is_read: false,
+        link_tab: 'complaints',
+        related_id: 'CMP-2026-003'
+      },
+      {
+        id: 'NOTIF-03',
+        type: 'KYC_INCOMPLETE',
+        title: 'KYC Action Required',
+        message: 'Ananya Rao (Room 102) has submitted partial KYC documents.',
+        timestamp: '2026-08-12T11:00:00.000Z',
+        is_read: false,
+        link_tab: 'kyc',
+        related_id: 'RES-1009'
+      }
+    );
+
+    // Initial Audit Logs
+    audit_logs.push(
+      {
+        id: 'AUD-001',
+        admin_user: 'Sathwik Pala',
+        action: 'SYSTEM_BOOT',
+        entity_type: 'SYSTEM',
+        entity_id: 'HC-HYD-01',
+        details: 'Hanura Casa Smart Hostel Management & Monitoring Core System initialized.',
+        timestamp: '2026-08-01T00:00:00.000Z'
+      },
+      {
+        id: 'AUD-002',
+        admin_user: 'Sathwik Pala',
+        action: 'RECORD_PAYMENT',
+        entity_type: 'PAYMENT',
+        entity_id: 'PAY-202608-1001',
+        details: 'Recorded payment of ₹5,000 for Rahul Sharma (Room 204 Bed 3) for August 2026.',
+        timestamp: '2026-08-04T11:05:00.000Z'
+      }
+    );
+
+    this.data = {
+      settings: initialSettings,
+      floors,
+      rooms,
+      beds,
+      residents,
+      payments,
+      advances,
+      expenses,
+      staff,
+      salary_payments,
+      maintenance_requests: initialMaintenanceData,
+      complaints: initialComplaintsData,
+      resident_documents,
+      room_assignments,
+      whatsapp_messages,
+      notifications,
+      audit_logs
+    };
+  }
+
+  // GET DATA
+  public getSnapshot(): DatabaseSchema {
+    return this.data;
+  }
+
+  // DASHBOARD METRICS CALCULATION
+  public getDashboardMetrics(): DashboardMetrics {
+    const activeResidents = this.data.residents.filter(r => r.status === 'ACTIVE');
+    const formerResidents = this.data.residents.filter(r => r.status === 'VACATED');
+    
+    const totalBeds = this.data.beds.length;
+    const occupiedBeds = this.data.beds.filter(b => b.status === 'OCCUPIED').length;
+    const vacantBeds = totalBeds - occupiedBeds;
+    const occupancyRate = totalBeds > 0 ? Number(((occupiedBeds / totalBeds) * 100).toFixed(1)) : 0;
+
+    // Expected Monthly Collection for Current Month (from active residents)
+    const expectedMonthly = activeResidents.reduce((sum, r) => sum + r.monthly_fee, 0);
+
+    // Current month is Aug 2026 ('2026-08')
+    const currentMonth = '2026-08';
+    const currentMonthPayments = this.data.payments.filter(p => p.month === currentMonth);
+    const collectedThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount_paid, 0);
+
+    const pendingAmount = Math.max(0, expectedMonthly - collectedThisMonth);
+
+    // Total expenses for current month
+    const currentMonthExpenses = this.data.expenses.filter(e => e.date.startsWith(currentMonth));
+    const totalExpenses = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const groceryExpenses = currentMonthExpenses
+      .filter(e => e.category === 'GROCERY')
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const salaryExpenses = currentMonthExpenses
+      .filter(e => e.category === 'SALARIES')
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const netOperatingAmount = collectedThisMonth - totalExpenses;
+    const collectionRate = expectedMonthly > 0 ? Number(((collectedThisMonth / expectedMonthly) * 100).toFixed(1)) : 0;
+
+    const unresolvedComplaints = this.data.complaints.filter(c => c.status === 'PENDING' || c.status === 'IN_PROGRESS').length;
+    const pendingMaintenance = this.data.maintenance_requests.filter(m => m.status === 'PENDING' || m.status === 'IN_PROGRESS').length;
+    const pendingKycCount = activeResidents.filter(r => r.kyc_status === 'NOT_STARTED' || r.kyc_status === 'PENDING' || r.kyc_status === 'SUBMITTED').length;
+
+    return {
+      total_beds: totalBeds,
+      occupied_beds: occupiedBeds,
+      vacant_beds: vacantBeds,
+      occupancy_rate: occupancyRate,
+      active_residents: activeResidents.length,
+      former_residents: formerResidents.length,
+      expected_monthly_collection: expectedMonthly,
+      collected_this_month: collectedThisMonth,
+      pending_amount: pendingAmount,
+      total_expenses: totalExpenses,
+      net_operating_amount: netOperatingAmount,
+      collection_rate: collectionRate,
+      grocery_expenses_month: groceryExpenses,
+      salaries_paid_month: salaryExpenses,
+      unresolved_complaints: unresolvedComplaints,
+      pending_maintenance: pendingMaintenance,
+      pending_kyc_count: pendingKycCount
+    };
+  }
+
+  // RECORD PAYMENT (TEST 1 Workflow)
+  public recordPayment(paymentData: {
+    resident_id: string;
+    month: string;
+    expected_amount: number;
+    amount_paid: number;
+    advance_used?: number;
+    payment_date: string;
+    payment_method: any;
+    transaction_reference: string;
+    notes?: string;
+    recorded_by?: string;
+  }): Payment {
+    const resident = this.data.residents.find(r => r.id === paymentData.resident_id);
+    if (!resident) {
+      throw new Error(`Resident ${paymentData.resident_id} not found.`);
+    }
+
+    const advanceUsed = Number(paymentData.advance_used || 0);
+    const amountPaid = Number(paymentData.amount_paid || 0);
+    const expected = Number(paymentData.expected_amount || resident.monthly_fee);
+    const balance = Math.max(0, expected - amountPaid - advanceUsed);
+
+    const paymentId = `PAY-${Date.now()}`;
+    const newPayment: Payment = {
+      id: paymentId,
+      resident_id: resident.id,
+      resident_name: resident.name,
+      room_id: resident.current_room_id || 'unassigned',
+      room_number: resident.current_room_number || 'N/A',
+      month: paymentData.month,
+      expected_amount: expected,
+      amount_paid: amountPaid,
+      advance_used: advanceUsed,
+      balance: balance,
+      payment_date: paymentData.payment_date || new Date().toISOString(),
+      payment_method: paymentData.payment_method || 'UPI',
+      transaction_reference: paymentData.transaction_reference || `UPI/${Date.now()}`,
+      notes: paymentData.notes || '',
+      recorded_by: paymentData.recorded_by || this.data.settings.admin_name,
+      created_at: new Date().toISOString()
+    };
+
+    this.data.payments.push(newPayment);
+
+    // If advance was used, record in advance ledger
+    if (advanceUsed > 0) {
+      let advAcc = this.data.advances.find(a => a.resident_id === resident.id);
+      if (advAcc) {
+        advAcc.current_advance = Math.max(0, advAcc.current_advance - advanceUsed);
+        advAcc.transactions.push({
+          id: `ADV-TXN-${Date.now()}`,
+          type: 'MONTHLY_ADJUSTMENT',
+          amount: advanceUsed,
+          date: newPayment.payment_date,
+          reference: newPayment.id,
+          notes: `Adjusted towards rent for ${newPayment.month}`,
+          balance_after: advAcc.current_advance
+        });
+      }
+    }
+
+    // Add immutable audit log
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: newPayment.recorded_by,
+      action: 'RECORD_PAYMENT',
+      entity_type: 'PAYMENT',
+      entity_id: newPayment.id,
+      details: `Recorded ₹${amountPaid.toLocaleString('en-IN')} payment from ${resident.name} for ${newPayment.month}. (Balance: ₹${balance.toLocaleString('en-IN')})`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newPayment;
+  }
+
+  // ROOM TRANSFER (TEST 2 Workflow)
+  public transferRoom(data: {
+    resident_id: string;
+    new_room_id: string;
+    new_bed_id: string;
+    transfer_reason?: string;
+    admin_user?: string;
+  }): { resident: Resident; old_room: Room | null; new_room: Room } {
+    const resident = this.data.residents.find(r => r.id === data.resident_id);
+    if (!resident) throw new Error('Resident not found.');
+
+    const newRoom = this.data.rooms.find(r => r.id === data.new_room_id);
+    if (!newRoom) throw new Error('Target room not found.');
+
+    const newBed = newRoom.beds.find(b => b.id === data.new_bed_id);
+    if (!newBed) throw new Error('Target bed not found in selected room.');
+    if (newBed.status === 'OCCUPIED' && newBed.current_resident_id !== resident.id) {
+      throw new Error(`Bed ${newBed.bed_number} in Room ${newRoom.room_number} is already occupied.`);
+    }
+
+    const oldRoomNumber = resident.current_room_number;
+    const oldBedId = resident.current_bed_id;
+    let oldRoom: Room | null = null;
+
+    // Free old bed if any
+    if (resident.current_room_id && oldBedId) {
+      oldRoom = this.data.rooms.find(r => r.id === resident.current_room_id) || null;
+      if (oldRoom) {
+        const oldBed = oldRoom.beds.find(b => b.id === oldBedId);
+        if (oldBed) {
+          oldBed.status = 'VACANT';
+          oldBed.current_resident_id = null;
+          oldBed.current_resident_name = null;
+        }
+        // Update old room count
+        const occ = oldRoom.beds.filter(b => b.status === 'OCCUPIED').length;
+        oldRoom.occupied_beds_count = occ;
+        oldRoom.vacant_beds_count = oldRoom.capacity - occ;
+        oldRoom.status = occ === oldRoom.capacity ? 'FULL' : 'AVAILABLE';
+      }
+
+      // Update in global beds array
+      const globalOldBed = this.data.beds.find(b => b.id === oldBedId);
+      if (globalOldBed) {
+        globalOldBed.status = 'VACANT';
+        globalOldBed.current_resident_id = null;
+        globalOldBed.current_resident_name = null;
+      }
+
+      // Mark old active assignment as transferred
+      const currentAssignment = this.data.room_assignments.find(
+        a => a.resident_id === resident.id && a.status === 'ACTIVE'
+      );
+      if (currentAssignment) {
+        currentAssignment.status = 'TRANSFERRED';
+        currentAssignment.end_date = new Date().toISOString().split('T')[0];
+        currentAssignment.transfer_reason = data.transfer_reason || 'Admin room reallocation';
+      }
+    }
+
+    // Occupy new bed
+    newBed.status = 'OCCUPIED';
+    newBed.current_resident_id = resident.id;
+    newBed.current_resident_name = resident.name;
+
+    const globalNewBed = this.data.beds.find(b => b.id === newBed.id);
+    if (globalNewBed) {
+      globalNewBed.status = 'OCCUPIED';
+      globalNewBed.current_resident_id = resident.id;
+      globalNewBed.current_resident_name = resident.name;
+    }
+
+    // Update new room count
+    const occNew = newRoom.beds.filter(b => b.status === 'OCCUPIED').length;
+    newRoom.occupied_beds_count = occNew;
+    newRoom.vacant_beds_count = newRoom.capacity - occNew;
+    newRoom.status = occNew === newRoom.capacity ? 'FULL' : 'AVAILABLE';
+
+    // Update resident profile
+    resident.current_room_id = newRoom.id;
+    resident.current_room_number = newRoom.room_number;
+    resident.current_bed_id = newBed.id;
+    resident.current_bed_number = newBed.bed_number;
+    resident.floor_number = newRoom.floor_number;
+    resident.sharing_type = newRoom.sharing_type;
+    resident.monthly_fee = newRoom.monthly_fee;
+    resident.updated_at = new Date().toISOString();
+
+    // Create new room assignment history entry
+    this.data.room_assignments.push({
+      id: `ASN-${resident.id}-${Date.now()}`,
+      resident_id: resident.id,
+      resident_name: resident.name,
+      room_id: newRoom.id,
+      room_number: newRoom.room_number,
+      bed_id: newBed.id,
+      bed_number: newBed.bed_number,
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: null,
+      status: 'ACTIVE'
+    });
+
+    // Immutable audit log
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: data.admin_user || this.data.settings.admin_name,
+      action: 'ROOM_TRANSFER',
+      entity_type: 'RESIDENT',
+      entity_id: resident.id,
+      details: `Transferred ${resident.name} from Room ${oldRoomNumber || 'None'} to Room ${newRoom.room_number} (Bed ${newBed.bed_number}).`,
+      old_value: `Room ${oldRoomNumber || 'None'}`,
+      new_value: `Room ${newRoom.room_number} Bed ${newBed.bed_number}`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return { resident, old_room: oldRoom, new_room: newRoom };
+  }
+
+  // MARK RESIDENT VACATED (TEST 3 Workflow)
+  public markResidentVacated(data: {
+    resident_id: string;
+    vacated_reason?: string;
+    admin_user?: string;
+  }): Resident {
+    const resident = this.data.residents.find(r => r.id === data.resident_id);
+    if (!resident) throw new Error('Resident not found.');
+
+    const oldRoomNumber = resident.current_room_number;
+    const oldBedId = resident.current_bed_id;
+
+    // Free assigned bed
+    if (resident.current_room_id && oldBedId) {
+      const room = this.data.rooms.find(r => r.id === resident.current_room_id);
+      if (room) {
+        const bed = room.beds.find(b => b.id === oldBedId);
+        if (bed) {
+          bed.status = 'VACANT';
+          bed.current_resident_id = null;
+          bed.current_resident_name = null;
+        }
+        const occ = room.beds.filter(b => b.status === 'OCCUPIED').length;
+        room.occupied_beds_count = occ;
+        room.vacant_beds_count = room.capacity - occ;
+        room.status = occ === room.capacity ? 'FULL' : 'AVAILABLE';
+      }
+
+      const globalBed = this.data.beds.find(b => b.id === oldBedId);
+      if (globalBed) {
+        globalBed.status = 'VACANT';
+        globalBed.current_resident_id = null;
+        globalBed.current_resident_name = null;
+      }
+    }
+
+    // Close active room assignment
+    const activeAssignment = this.data.room_assignments.find(
+      a => a.resident_id === resident.id && a.status === 'ACTIVE'
+    );
+    if (activeAssignment) {
+      activeAssignment.status = 'VACATED';
+      activeAssignment.end_date = new Date().toISOString().split('T')[0];
+    }
+
+    // Update resident state
+    resident.status = 'VACATED';
+    resident.vacated_date = new Date().toISOString().split('T')[0];
+    resident.vacated_reason = data.vacated_reason || 'Resident checked out';
+    resident.current_room_id = null;
+    resident.current_room_number = null;
+    resident.current_bed_id = null;
+    resident.current_bed_number = null;
+    resident.floor_number = null;
+    resident.updated_at = new Date().toISOString();
+
+    // Audit log
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: data.admin_user || this.data.settings.admin_name,
+      action: 'MARK_VACATED',
+      entity_type: 'RESIDENT',
+      entity_id: resident.id,
+      details: `Marked ${resident.name} as VACATED from Room ${oldRoomNumber || 'N/A'}. Bed released. All financial transaction history permanently preserved.`,
+      old_value: 'ACTIVE',
+      new_value: 'VACATED',
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return resident;
+  }
+
+  // ADD EXPENSE (TEST 4 Workflow)
+  public addExpense(expenseData: Partial<Expense>): Expense {
+    if (!expenseData.amount || Number(expenseData.amount) <= 0) {
+      throw new Error('Expense amount must be greater than zero.');
+    }
+
+    const newExpense: Expense = {
+      id: `EXP-${Date.now()}`,
+      category: expenseData.category || 'MISCELLANEOUS',
+      subcategory: expenseData.subcategory || 'General',
+      amount: Number(expenseData.amount),
+      date: expenseData.date || new Date().toISOString(),
+      vendor: expenseData.vendor || 'General Vendor',
+      payment_method: expenseData.payment_method || 'UPI',
+      description: expenseData.description || '',
+      receipt_url: expenseData.receipt_url,
+      items: expenseData.items || [],
+      created_by: expenseData.created_by || this.data.settings.admin_name,
+      created_at: new Date().toISOString()
+    };
+
+    this.data.expenses.unshift(newExpense);
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: newExpense.created_by,
+      action: 'ADD_EXPENSE',
+      entity_type: 'EXPENSE',
+      entity_id: newExpense.id,
+      details: `Added ${newExpense.category} expense of ₹${newExpense.amount.toLocaleString('en-IN')} paid to ${newExpense.vendor}.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newExpense;
+  }
+
+  // DELETE / ARCHIVE EXPENSE
+  public deleteExpense(expenseId: string, adminUser?: string): boolean {
+    const index = this.data.expenses.findIndex(e => e.id === expenseId);
+    if (index === -1) throw new Error('Expense not found.');
+
+    const exp = this.data.expenses[index];
+    this.data.expenses.splice(index, 1);
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: adminUser || this.data.settings.admin_name,
+      action: 'DELETE_EXPENSE',
+      entity_type: 'EXPENSE',
+      entity_id: expenseId,
+      details: `Deleted expense record ₹${exp.amount.toLocaleString('en-IN')} (${exp.category} - ${exp.description}).`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return true;
+  }
+
+  // CREATE RESIDENT
+  public createResident(residentData: Partial<Resident> & {
+    target_room_id?: string;
+    target_bed_id?: string;
+    advance_amount?: number;
+  }): Resident {
+    const residentId = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    let room: Room | null = null;
+    let bed: Bed | null = null;
+
+    if (residentData.target_room_id && residentData.target_bed_id) {
+      room = this.data.rooms.find(r => r.id === residentData.target_room_id) || null;
+      if (room) {
+        bed = room.beds.find(b => b.id === residentData.target_bed_id) || null;
+        if (bed && bed.status === 'OCCUPIED') {
+          throw new Error(`Bed ${bed.bed_number} in Room ${room.room_number} is already occupied.`);
+        }
+      }
+    }
+
+    const newResident: Resident = {
+      id: residentId,
+      name: residentData.name || 'New Resident',
+      photo_url: residentData.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+      phone: residentData.phone || '',
+      whatsapp: residentData.whatsapp || residentData.phone || '',
+      email: residentData.email || '',
+      college: residentData.college || '',
+      course: residentData.course || '',
+      academic_year: residentData.academic_year || '1st Year',
+      date_of_birth: residentData.date_of_birth || '2004-01-01',
+      parent_name: residentData.parent_name || '',
+      parent_phone: residentData.parent_phone || '',
+      emergency_contact: residentData.emergency_contact || '',
+      permanent_address: residentData.permanent_address || '',
+      joining_date: residentData.joining_date || new Date().toISOString().split('T')[0],
+      current_room_id: room ? room.id : null,
+      current_room_number: room ? room.room_number : null,
+      current_bed_id: bed ? bed.id : null,
+      current_bed_number: bed ? bed.bed_number : null,
+      floor_number: room ? room.floor_number : null,
+      sharing_type: room ? room.sharing_type : '4-Sharing',
+      monthly_fee: residentData.monthly_fee || (room ? room.monthly_fee : 6500),
+      status: 'ACTIVE',
+      vacated_date: null,
+      vacated_reason: null,
+      kyc_status: 'PENDING',
+      kyc_completion: 30,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (room && bed) {
+      bed.status = 'OCCUPIED';
+      bed.current_resident_id = newResident.id;
+      bed.current_resident_name = newResident.name;
+
+      const globalBed = this.data.beds.find(b => b.id === bed!.id);
+      if (globalBed) {
+        globalBed.status = 'OCCUPIED';
+        globalBed.current_resident_id = newResident.id;
+        globalBed.current_resident_name = newResident.name;
+      }
+
+      const occ = room.beds.filter(b => b.status === 'OCCUPIED').length;
+      room.occupied_beds_count = occ;
+      room.vacant_beds_count = room.capacity - occ;
+      room.status = occ === room.capacity ? 'FULL' : 'AVAILABLE';
+
+      // Room assignment history
+      this.data.room_assignments.push({
+        id: `ASN-${newResident.id}-${Date.now()}`,
+        resident_id: newResident.id,
+        resident_name: newResident.name,
+        room_id: room.id,
+        room_number: room.room_number,
+        bed_id: bed.id,
+        bed_number: bed.bed_number,
+        start_date: newResident.joining_date,
+        end_date: null,
+        status: 'ACTIVE'
+      });
+    }
+
+    this.data.residents.unshift(newResident);
+
+    // Opening Advance
+    const advAmount = Number(residentData.advance_amount || 0);
+    this.data.advances.push({
+      id: `ADV-${newResident.id}`,
+      resident_id: newResident.id,
+      resident_name: newResident.name,
+      opening_advance: advAmount,
+      current_advance: advAmount,
+      transactions: advAmount > 0 ? [
+        {
+          id: `ADV-TXN-${Date.now()}`,
+          type: 'DEPOSIT',
+          amount: advAmount,
+          date: newResident.joining_date,
+          reference: `ADV-INIT-${newResident.id}`,
+          notes: 'Security deposit received at check-in',
+          balance_after: advAmount
+        }
+      ] : []
+    });
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: this.data.settings.admin_name,
+      action: 'ADD_RESIDENT',
+      entity_type: 'RESIDENT',
+      entity_id: newResident.id,
+      details: `Created new resident ${newResident.name} assigned to Room ${newResident.current_room_number || 'Unassigned'}.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newResident;
+  }
+
+  // EDIT RESIDENT
+  public editResident(residentId: string, updates: Partial<Resident>): Resident {
+    const resident = this.data.residents.find(r => r.id === residentId);
+    if (!resident) throw new Error('Resident not found.');
+
+    Object.assign(resident, updates);
+    resident.updated_at = new Date().toISOString();
+
+    // If name changed, update across references
+    if (updates.name) {
+      this.data.beds.forEach(b => {
+        if (b.current_resident_id === resident.id) b.current_resident_name = updates.name!;
+      });
+      this.data.rooms.forEach(rm => {
+        rm.beds.forEach(b => {
+          if (b.current_resident_id === resident.id) b.current_resident_name = updates.name!;
+        });
+      });
+    }
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: this.data.settings.admin_name,
+      action: 'EDIT_RESIDENT',
+      entity_type: 'RESIDENT',
+      entity_id: resident.id,
+      details: `Updated resident profile for ${resident.name}.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return resident;
+  }
+
+  // UPLOAD / VERIFY KYC (TEST 5 Workflow)
+  public uploadKYCDocument(data: {
+    resident_id: string;
+    document_type: 'AADHAAR' | 'PAN' | 'COLLEGE_ID' | 'PASSPORT' | 'ADDRESS_PROOF' | 'PHOTO';
+    document_name: string;
+    document_url: string;
+    file_size?: string;
+  }): ResidentDocument {
+    const resident = this.data.residents.find(r => r.id === data.resident_id);
+    if (!resident) throw new Error('Resident not found.');
+
+    const newDoc: ResidentDocument = {
+      id: `DOC-${Date.now()}`,
+      resident_id: resident.id,
+      document_type: data.document_type,
+      document_name: data.document_name,
+      document_url: data.document_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+      file_size: data.file_size || '1.2 MB',
+      uploaded_at: new Date().toISOString(),
+      verified_by: null,
+      verified_at: null,
+      status: 'PENDING'
+    };
+
+    this.data.resident_documents.push(newDoc);
+    this.recalculateResidentKYC(resident);
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: this.data.settings.admin_name,
+      action: 'UPLOAD_KYC_DOC',
+      entity_type: 'KYC_DOCUMENT',
+      entity_id: newDoc.id,
+      details: `Uploaded ${data.document_type} (${data.document_name}) for ${resident.name}.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newDoc;
+  }
+
+  public updateKYCStatus(data: {
+    document_id: string;
+    status: 'VERIFIED' | 'REJECTED';
+    rejection_reason?: string;
+    verified_by?: string;
+  }): ResidentDocument {
+    const doc = this.data.resident_documents.find(d => d.id === data.document_id);
+    if (!doc) throw new Error('Document not found.');
+
+    doc.status = data.status;
+    doc.verified_by = data.verified_by || this.data.settings.admin_name;
+    doc.verified_at = new Date().toISOString();
+    if (data.status === 'REJECTED') {
+      doc.rejection_reason = data.rejection_reason || 'Document unclear or invalid';
+    } else {
+      doc.rejection_reason = undefined;
+    }
+
+    const resident = this.data.residents.find(r => r.id === doc.resident_id);
+    if (resident) {
+      this.recalculateResidentKYC(resident);
+    }
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: doc.verified_by,
+      action: 'VERIFY_KYC_DOC',
+      entity_type: 'KYC_DOCUMENT',
+      entity_id: doc.id,
+      details: `Marked ${doc.document_type} for ${resident?.name || 'Resident'} as ${data.status}.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return doc;
+  }
+
+  private recalculateResidentKYC(resident: Resident) {
+    const residentDocs = this.data.resident_documents.filter(d => d.resident_id === resident.id);
+    const verifiedDocs = residentDocs.filter(d => d.status === 'VERIFIED');
+
+    if (residentDocs.length === 0) {
+      resident.kyc_status = 'NOT_STARTED';
+      resident.kyc_completion = 0;
+    } else if (verifiedDocs.length >= 2) {
+      resident.kyc_status = 'VERIFIED';
+      resident.kyc_completion = 100;
+    } else if (verifiedDocs.length === 1) {
+      resident.kyc_status = 'SUBMITTED';
+      resident.kyc_completion = 60;
+    } else if (residentDocs.some(d => d.status === 'REJECTED')) {
+      resident.kyc_status = 'REJECTED';
+      resident.kyc_completion = 30;
+    } else {
+      resident.kyc_status = 'PENDING';
+      resident.kyc_completion = 40;
+    }
+  }
+
+  // SEND WHATSAPP MESSAGE (TEST 6 Workflow)
+  public sendWhatsAppMessage(data: {
+    resident_ids: string[];
+    message_type: 'PAYMENT_REMINDER' | 'PAYMENT_CONFIRMATION' | 'OVERDUE_ALERT' | 'KYC_REQUEST' | 'CUSTOM';
+    custom_text?: string;
+    month?: string;
+  }): { success_count: number; failed_count: number; messages: WhatsAppMessage[] } {
+    const resultMessages: WhatsAppMessage[] = [];
+    let success = 0;
+    let failed = 0;
+
+    const monthStr = data.month || 'August 2026';
+    const monthKey = '2026-08';
+
+    data.resident_ids.forEach(resId => {
+      const resident = this.data.residents.find(r => r.id === resId);
+      if (!resident) {
+        failed++;
+        return;
+      }
+
+      // Calculate actual payment details from database for this resident and month
+      const payment = this.data.payments.find(p => p.resident_id === resId && p.month === monthKey);
+      const paidAmount = payment ? payment.amount_paid : 0;
+      const expectedAmount = resident.monthly_fee;
+      const balance = Math.max(0, expectedAmount - paidAmount);
+
+      let content = '';
+      if (data.custom_text) {
+        content = data.custom_text
+          .replace(/{{name}}/g, resident.name)
+          .replace(/{{month}}/g, monthStr)
+          .replace(/{{expected}}/g, expectedAmount.toLocaleString('en-IN'))
+          .replace(/{{paid}}/g, paidAmount.toLocaleString('en-IN'))
+          .replace(/{{balance}}/g, balance.toLocaleString('en-IN'));
+      } else if (data.message_type === 'PAYMENT_REMINDER') {
+        content = `Hi ${resident.name},\n\nYour Hanura Casa fee for ${monthStr} is ₹${expectedAmount.toLocaleString('en-IN')}.\n\nPaid: ₹${paidAmount.toLocaleString('en-IN')}\nBalance: ₹${balance.toLocaleString('en-IN')}\n\nPlease clear the pending amount.\n\nThank you,\nHanura Casa`;
+      } else if (data.message_type === 'OVERDUE_ALERT') {
+        content = `Hi ${resident.name},\n\nYour Hanura Casa fee of ₹${balance.toLocaleString('en-IN')} for ${monthStr} is overdue.\n\nPlease clear the pending amount at the earliest.\n\nThank you,\nHanura Casa Management`;
+      } else if (data.message_type === 'PAYMENT_CONFIRMATION') {
+        content = `Hi ${resident.name},\n\nYour payment of ₹${paidAmount.toLocaleString('en-IN')} for ${monthStr} has been recorded successfully.\n\nThank you for choosing Hanura Casa.`;
+      } else {
+        content = `Hi ${resident.name},\n\nThis is an official communication from Hanura Casa regarding your stay.`;
+      }
+
+      const isConfigured = this.data.settings.whatsapp_api_configured !== false;
+      const status: 'DELIVERED' | 'FAILED' = isConfigured ? 'DELIVERED' : 'FAILED';
+
+      if (isConfigured) {
+        success++;
+      } else {
+        failed++;
+      }
+
+      const msg: WhatsAppMessage = {
+        id: `WA-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        resident_id: resident.id,
+        resident_name: resident.name,
+        phone: resident.whatsapp || resident.phone,
+        message_type: data.message_type,
+        template_name: `${data.message_type.toLowerCase()}_template`,
+        message_content: content,
+        sent_at: new Date().toISOString(),
+        status: status,
+        error_message: isConfigured ? undefined : 'WhatsApp Business API credentials not configured in settings.'
+      };
+
+      this.data.whatsapp_messages.unshift(msg);
+      resultMessages.push(msg);
+    });
+
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: this.data.settings.admin_name,
+      action: 'WHATSAPP_BROADCAST',
+      entity_type: 'WHATSAPP',
+      entity_id: `BATCH-${Date.now()}`,
+      details: `Sent ${data.message_type} to ${data.resident_ids.length} resident(s). (Delivered: ${success}, Failed: ${failed})`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return { success_count: success, failed_count: failed, messages: resultMessages };
+  }
+
+  // SIGNATURE FEATURE: ROOM PAYMENT MATRIX (Jan - Aug)
+  public getRoomPaymentMatrix(roomId: string) {
+    const room = this.data.rooms.find(r => r.id === roomId);
+    if (!room) throw new Error('Room not found');
+
+    // Get all assignments for this room (current and historical)
+    const roomAssignments = this.data.room_assignments.filter(a => a.room_id === roomId);
+    const residentIds = Array.from(new Set(roomAssignments.map(a => a.resident_id)));
+
+    // Also include current active occupants in this room
+    const currentResidents = this.data.residents.filter(r => r.current_room_id === roomId);
+    currentResidents.forEach(r => {
+      if (!residentIds.includes(r.id)) residentIds.push(r.id);
+    });
+
+    const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+
+    const matrix = residentIds.map(resId => {
+      const res = this.data.residents.find(r => r.id === resId);
+      const adv = this.data.advances.find(a => a.resident_id === resId);
+      const resPayments = this.data.payments.filter(p => p.resident_id === resId);
+
+      const monthlyAmounts: Record<string, { paid: number; expected: number; balance: number; paymentId?: string }> = {};
+      let totalPaid = 0;
+      let totalBalance = 0;
+
+      months.forEach(m => {
+        const p = resPayments.find(pay => pay.month === m);
+        const paid = p ? p.amount_paid : 0;
+        const expected = res ? res.monthly_fee : 6000;
+        const bal = p ? p.balance : (res && res.status === 'ACTIVE' ? expected : 0);
+
+        monthlyAmounts[m] = {
+          paid,
+          expected,
+          balance: bal,
+          paymentId: p?.id
+        };
+
+        totalPaid += paid;
+        totalBalance += bal;
+      });
+
+      return {
+        resident_id: resId,
+        resident_name: res ? res.name : 'Former Resident',
+        photo_url: res?.photo_url,
+        bed_number: res?.current_bed_number || 'N/A',
+        status: res?.status || 'VACATED',
+        current_advance: adv?.current_advance || 0,
+        monthly_fee: res?.monthly_fee || 6000,
+        months: monthlyAmounts,
+        total_paid: totalPaid,
+        total_balance: totalBalance
+      };
+    });
+
+    return {
+      room,
+      months,
+      matrix
+    };
+  }
+
+  // UPDATE SETTINGS
+  public updateSettings(settings: Partial<SystemSettings>): SystemSettings {
+    Object.assign(this.data.settings, settings);
+    this.data.audit_logs.push({
+      id: `AUD-${Date.now()}`,
+      admin_user: this.data.settings.admin_name,
+      action: 'UPDATE_SETTINGS',
+      entity_type: 'SETTINGS',
+      entity_id: 'SYSTEM',
+      details: 'System settings and property configuration updated.',
+      timestamp: new Date().toISOString()
+    });
+    this.saveToDisk();
+    return this.data.settings;
+  }
+
+  // COMPLAINT & MAINTENANCE CRUD
+  public createComplaint(data: Partial<Complaint>): Complaint {
+    const newComplaint: Complaint = {
+      id: `CMP-${Date.now()}`,
+      resident_id: data.resident_id || 'RES-GUEST',
+      resident_name: data.resident_name || 'Resident',
+      room_number: data.room_number || '101',
+      category: data.category || 'General',
+      description: data.description || '',
+      priority: data.priority || 'MEDIUM',
+      status: 'PENDING',
+      assigned_person: data.assigned_person || 'Warden Lakshmi Prasad',
+      created_at: new Date().toISOString(),
+      resolved_at: null,
+      resolution_notes: ''
+    };
+    this.data.complaints.unshift(newComplaint);
+    this.saveToDisk();
+    return newComplaint;
+  }
+
+  public updateComplaint(id: string, updates: Partial<Complaint>): Complaint {
+    const comp = this.data.complaints.find(c => c.id === id);
+    if (!comp) throw new Error('Complaint not found.');
+    Object.assign(comp, updates);
+    if (updates.status === 'RESOLVED' || updates.status === 'CLOSED') {
+      comp.resolved_at = new Date().toISOString();
+    }
+    this.saveToDisk();
+    return comp;
+  }
+
+  public createMaintenance(data: Partial<MaintenanceRequest>): MaintenanceRequest {
+    const newMnt: MaintenanceRequest = {
+      id: `MNT-${Date.now()}`,
+      resident_id: data.resident_id,
+      resident_name: data.resident_name,
+      room_number: data.room_number || '101',
+      bed_number: data.bed_number,
+      category: data.category || 'General Repair',
+      description: data.description || '',
+      priority: data.priority || 'MEDIUM',
+      assigned_staff: data.assigned_staff || 'Naveen Chary',
+      estimated_cost: data.estimated_cost || 0,
+      actual_cost: data.actual_cost,
+      status: 'PENDING',
+      created_at: new Date().toISOString(),
+      completion_date: null,
+      resolution: ''
+    };
+    this.data.maintenance_requests.unshift(newMnt);
+    this.saveToDisk();
+    return newMnt;
+  }
+
+  public updateMaintenance(id: string, updates: Partial<MaintenanceRequest>): MaintenanceRequest {
+    const mnt = this.data.maintenance_requests.find(m => m.id === id);
+    if (!mnt) throw new Error('Maintenance request not found.');
+    Object.assign(mnt, updates);
+    if (updates.status === 'RESOLVED' || updates.status === 'CLOSED') {
+      mnt.completion_date = new Date().toISOString();
+    }
+    this.saveToDisk();
+    return mnt;
+  }
+
+  // STAFF & SALARY
+  public addStaff(staffData: Partial<Staff>): Staff {
+    const newStaff: Staff = {
+      id: `STF-${Date.now()}`,
+      name: staffData.name || 'New Staff',
+      phone: staffData.phone || '',
+      role: staffData.role || 'Cleaning',
+      joining_date: staffData.joining_date || new Date().toISOString().split('T')[0],
+      monthly_salary: Number(staffData.monthly_salary || 18000),
+      status: 'ACTIVE',
+      photo_url: staffData.photo_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+      address: staffData.address,
+      emergency_contact: staffData.emergency_contact
+    };
+    this.data.staff.push(newStaff);
+    this.saveToDisk();
+    return newStaff;
+  }
+
+  public recordSalaryPayment(data: {
+    staff_id: string;
+    month: string;
+    paid: number;
+    payment_method: any;
+    advance?: number;
+    deduction?: number;
+    transaction_ref?: string;
+  }): SalaryPayment {
+    const stf = this.data.staff.find(s => s.id === data.staff_id);
+    if (!stf) throw new Error('Staff not found.');
+
+    const salary = stf.monthly_salary;
+    const paid = Number(data.paid || salary);
+    const balance = Math.max(0, salary - paid - Number(data.deduction || 0));
+
+    const newSal: SalaryPayment = {
+      id: `SAL-${Date.now()}`,
+      staff_id: stf.id,
+      staff_name: stf.name,
+      staff_role: stf.role,
+      month: data.month,
+      salary: salary,
+      advance: Number(data.advance || 0),
+      deduction: Number(data.deduction || 0),
+      paid: paid,
+      balance: balance,
+      payment_date: new Date().toISOString(),
+      payment_method: data.payment_method || 'Bank Transfer',
+      transaction_ref: data.transaction_ref || `SAL-TXN-${Date.now()}`,
+      status: balance === 0 ? 'PAID' : 'PARTIAL'
+    };
+
+    this.data.salary_payments.unshift(newSal);
+
+    // Auto-record in expenses
+    this.data.expenses.unshift({
+      id: `EXP-SAL-${Date.now()}`,
+      category: 'SALARIES',
+      subcategory: `Salary - ${stf.role}`,
+      amount: paid,
+      date: new Date().toISOString(),
+      vendor: stf.name,
+      payment_method: data.payment_method || 'Bank Transfer',
+      description: `Disbursed ${data.month} salary to ${stf.name} (${stf.role})`,
+      created_by: this.data.settings.admin_name,
+      created_at: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newSal;
+  }
+}
+
+export const db = new DatabaseService();
