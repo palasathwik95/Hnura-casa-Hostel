@@ -114,6 +114,109 @@ async function startServer() {
     }
   });
 
+  // ==========================================
+  // FLOORS, ROOMS & BEDS MANAGEMENT ROUTES
+  // ==========================================
+
+  // Create Floor
+  app.post('/api/floors', (req, res) => {
+    try {
+      const floor = db.createFloor(req.body);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: floor, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Delete Floor
+  app.delete('/api/floors/:id', (req, res) => {
+    try {
+      db.deleteFloor(req.params.id);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Create Single Room
+  app.post('/api/rooms', (req, res) => {
+    try {
+      const room = db.createRoom(req.body);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: room, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Bulk Create Rooms
+  app.post('/api/rooms/bulk', (req, res) => {
+    try {
+      const createdRooms = db.bulkCreateRooms(req.body);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: createdRooms, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Update Room
+  app.put('/api/rooms/:id', (req, res) => {
+    try {
+      const room = db.updateRoom(req.params.id, req.body);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: room, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Delete Room
+  app.delete('/api/rooms/:id', (req, res) => {
+    try {
+      db.deleteRoom(req.params.id);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Add Bed to Room
+  app.post('/api/rooms/:id/beds', (req, res) => {
+    try {
+      const bed = db.addBedToRoom(req.params.id, req.body.price);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: bed, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Decrease Bed in Room
+  app.post('/api/rooms/:id/decrease-bed', (req, res) => {
+    try {
+      const bed = db.decreaseBedInRoom(req.params.id);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: bed, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // Delete Bed
+  app.delete('/api/beds/:id', (req, res) => {
+    try {
+      db.deleteBed(req.params.id);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
   // Expenses CRUD
   app.post('/api/expenses', (req, res) => {
     try {
@@ -235,7 +338,19 @@ async function startServer() {
   // Reset Demo Seed
   app.post('/api/system/reset-demo', (req, res) => {
     try {
-      db.seedInitialDatabase();
+      db.seedDemoData();
+      const snapshot = db.getSnapshot();
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: { ...snapshot, metrics } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Clear All Records / Fresh State
+  app.post('/api/system/clear-all', (req, res) => {
+    try {
+      db.clearAllData();
       const snapshot = db.getSnapshot();
       const metrics = db.getDashboardMetrics();
       res.json({ success: true, data: { ...snapshot, metrics } });

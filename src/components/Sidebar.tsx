@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Sparkles,
   RefreshCw,
-  LogOut
+  Trash2,
+  Flame
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,7 +37,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
     setSelectedRoomId,
     metrics,
     settings,
-    resetDemoDatabase
+    resetDemoDatabase,
+    clearAllData
   } = useApp();
 
   const handleNav = (tab: ActiveNavTab) => {
@@ -54,58 +56,64 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
     icon: React.ElementType;
     badge?: number | string;
     badgeColor?: string;
+    accentColor: string;
   }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, accentColor: '#FF1E9A' },
     {
       id: 'residents',
       label: 'Residents',
       icon: Users,
       badge: metrics?.active_residents || 0,
-      badgeColor: 'bg-[#6C4CFF]/20 text-[#0CC6FF] border border-[#0CC6FF]/30'
+      badgeColor: 'bg-[#FF1E9A]/15 text-[#FF1E9A] border border-[#FF1E9A]/30',
+      accentColor: '#FF1E9A'
     },
     {
       id: 'rooms',
       label: 'Rooms & Beds',
       icon: Building2,
       badge: `${metrics?.occupied_beds || 0}/${metrics?.total_beds || 0}`,
-      badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+      badgeColor: 'bg-[#0CC6FF]/15 text-[#0CC6FF] border border-[#0CC6FF]/30',
+      accentColor: '#0CC6FF'
     },
     {
       id: 'payments',
       label: 'Payments',
       icon: CreditCard,
       badge: metrics?.pending_amount && metrics.pending_amount > 0 ? 'Dues' : undefined,
-      badgeColor: 'bg-[#FF6F3C]/20 text-[#FF6F3C] border border-[#FF6F3C]/30'
+      badgeColor: 'bg-[#FF6F3C]/20 text-[#FF6F3C] border border-[#FF6F3C]/30',
+      accentColor: '#FF6F3C'
     },
-    { id: 'advances', label: 'Advance Ledger', icon: Wallet },
-    { id: 'expenses', label: 'Expenses & Mess', icon: Receipt },
+    { id: 'expenses', label: 'Expenses & Mess', icon: Receipt, accentColor: '#FF6F3C' },
     {
       id: 'maintenance',
       label: 'Maintenance',
       icon: Wrench,
       badge: metrics?.pending_maintenance && metrics.pending_maintenance > 0 ? metrics.pending_maintenance : undefined,
-      badgeColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+      badgeColor: 'bg-[#FF6F3C]/20 text-[#FF6F3C] border border-[#FF6F3C]/30',
+      accentColor: '#FF6F3C'
     },
     {
       id: 'complaints',
       label: 'Complaints',
       icon: MessageSquareWarning,
       badge: metrics?.unresolved_complaints && metrics.unresolved_complaints > 0 ? metrics.unresolved_complaints : undefined,
-      badgeColor: 'bg-[#FF1E9A]/20 text-[#FF1E9A] border border-[#FF1E9A]/30'
+      badgeColor: 'bg-[#FF1E9A]/20 text-[#FF1E9A] border border-[#FF1E9A]/30',
+      accentColor: '#FF1E9A'
     },
-    { id: 'staff', label: 'Staff & Salaries', icon: UserCheck },
+    { id: 'staff', label: 'Staff & Payroll', icon: UserCheck, accentColor: '#6C4CFF' },
     {
       id: 'kyc',
-      label: 'Digital KYC',
+      label: 'Digital KYC Vault',
       icon: ShieldCheck,
       badge: metrics?.pending_kyc_count && metrics.pending_kyc_count > 0 ? `${metrics.pending_kyc_count} req` : undefined,
-      badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+      badgeColor: 'bg-[#0CC6FF]/20 text-[#0CC6FF] border border-[#0CC6FF]/30',
+      accentColor: '#0CC6FF'
     },
-    { id: 'whatsapp', label: 'WhatsApp Center', icon: Send },
-    { id: 'reports', label: 'Reports & P&L', icon: FileBarChart },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'audit_logs', label: 'Audit Logs', icon: History },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'whatsapp', label: 'WhatsApp Center', icon: Send, accentColor: '#25D366' },
+    { id: 'reports', label: 'Reports & P&L', icon: FileBarChart, accentColor: '#6C4CFF' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, accentColor: '#0CC6FF' },
+    { id: 'audit_logs', label: 'Audit Trail', icon: History, accentColor: '#8E8E9F' },
+    { id: 'settings', label: 'Settings', icon: Settings, accentColor: '#8E8E9F' }
   ];
 
   return (
@@ -113,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 bg-black/85 z-40 lg:hidden backdrop-blur-md transition-opacity"
           onClick={() => setMobileOpen && setMobileOpen(false)}
         />
       )}
@@ -121,31 +129,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
       {/* Sidebar Container */}
       <aside
         id="hanura-sidebar"
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#0F0F12] border-r border-[#1F1F23] flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#0B0B0C]/95 backdrop-blur-xl border-r border-white/[0.08] flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="p-6 border-b border-[#1F1F23] flex items-center justify-between">
+        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-tr from-[#D4AF37] to-[#F2E3B5] rounded-sm flex items-center justify-center shadow-md">
-              <span className="font-brand font-bold text-black text-sm tracking-wider">HC</span>
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-semibold text-white tracking-tight text-base font-brand">HANURA CASA</span>
-                <span className="text-[9px] text-[#D4AF37] border border-[#D4AF37]/30 px-1.5 py-0.2 rounded-full uppercase tracking-widest font-mono">
-                  OS
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF1E9A] via-[#6C4CFF] to-[#0CC6FF] p-[1.5px] shadow-[0_0_20px_rgba(255,30,154,0.35)]">
+              <div className="w-full h-full bg-[#141414] rounded-[10px] flex items-center justify-center">
+                <span className="font-brand font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E9A] to-[#0CC6FF] text-base tracking-wider">
+                  HM
                 </span>
               </div>
-              <p className="text-[10px] text-[#6B6B76] uppercase tracking-[0.15em] font-medium">
-                Hostel Management
+            </div>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="font-heading font-extrabold text-white tracking-tight text-base">
+                  HANURA CASA
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#FF1E9A]/15 text-[#FF1E9A] border border-[#FF1E9A]/30 uppercase font-bold tracking-wider">
+                  PRO
+                </span>
+              </div>
+              <p className="text-[10px] text-[#8E8E9F] font-mono uppercase tracking-[0.18em]">
+                Smart Living OS
               </p>
             </div>
           </div>
           <button
             onClick={() => setMobileOpen && setMobileOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-[#6B6B76] hover:text-white hover:bg-[#15151A]"
+            className="lg:hidden p-2 rounded-xl text-[#8E8E9F] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -153,9 +167,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
 
         {/* Navigation List */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] uppercase tracking-[0.2em] font-bold text-[#6B6B76]">
-            Operations & Control
+          <div className="px-3 pb-2 text-[10px] uppercase tracking-[0.2em] font-mono font-bold text-[#8E8E9F] flex items-center justify-between">
+            <span>OPERATIONS & CONTROL</span>
+            <span className="text-[9px] text-[#0CC6FF]">LIVE</span>
           </div>
+
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -164,89 +180,97 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
                 key={item.id}
                 id={`nav-${item.id}`}
                 onClick={() => handleNav(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all group ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 group relative ${
                   isActive
-                    ? 'bg-[#1F1F23] text-white font-medium shadow-xs'
-                    : 'text-[#6B6B76] hover:text-white hover:bg-[#15151A]/60'
+                    ? 'bg-[#141414] text-white font-medium shadow-[0_0_25px_-5px_rgba(255,30,154,0.25)] border border-white/[0.1]'
+                    : 'text-[#8E8E9F] hover:text-white hover:bg-[#141414]/60'
                 }`}
               >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r-full bg-gradient-to-b from-[#FF1E9A] to-[#6C4CFF] shadow-[0_0_10px_#FF1E9A]" />
+                )}
                 <div className="flex items-center space-x-3">
-                  {isActive ? (
-                    <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full shrink-0 shadow-sm shadow-[#D4AF37]" />
-                  ) : (
-                    <Icon className="w-4 h-4 text-[#6B6B76] group-hover:text-[#D1D1D1] transition-colors" />
-                  )}
-                  <span className={isActive ? 'font-semibold text-white' : ''}>{item.label}</span>
+                  <Icon
+                    className={`w-4 h-4 transition-colors ${
+                      isActive
+                        ? 'text-[#FF1E9A]'
+                        : 'text-[#8E8E9F] group-hover:text-white'
+                    }`}
+                  />
+                  <span className={isActive ? 'font-semibold text-white tracking-wide' : 'tracking-normal'}>
+                    {item.label}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   {item.badge !== undefined && (
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                        isActive
-                          ? 'bg-[#15151A] text-[#D4AF37] border border-[#D4AF37]/30'
-                          : 'bg-[#15151A] text-[#8E8E98] border border-[#23232A]'
+                        item.badgeColor || (isActive ? 'bg-[#FF1E9A]/20 text-[#FF1E9A]' : 'bg-[#141414] text-[#8E8E9F] border border-white/[0.05]')
                       }`}
                     >
                       {item.badge}
                     </span>
                   )}
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#D4AF37]" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#0CC6FF]" />}
                 </div>
               </button>
             );
           })}
         </div>
 
-        {/* System Status & Admin Profile */}
-        <div className="p-4 border-t border-[#1F1F23] bg-[#0F0F12] space-y-3">
-          {/* Live Node Status widget */}
-          <div className="bg-[#15151A] p-3 rounded-xl border border-[#23232A] flex items-center justify-between">
-            <div>
-              <div className="text-[10px] text-[#6B6B76] uppercase tracking-widest font-bold mb-0.5">
-                SYSTEM STATUS
-              </div>
-              <div className="text-xs text-[#4CAF50] font-medium flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4CAF50] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4CAF50]"></span>
-                </span>
-                Madhapur Node Active
-              </div>
-            </div>
+        {/* System Management & Admin Status */}
+        <div className="p-4 border-t border-white/[0.08] bg-[#0B0B0C] space-y-3">
+          {/* Quick Database Action Bar */}
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {
-                if (confirm('Reset database to clean default demonstration state?')) {
+                if (confirm('Clear all demo residents, payments, and records to start fresh for real check-ins?')) {
+                  clearAllData();
+                }
+              }}
+              title="Wipe demo data (Clean Slate)"
+              className="px-2.5 py-1.5 rounded-xl bg-[#141414] hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 text-[11px] font-mono flex items-center justify-center space-x-1.5 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Clean Slate</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (confirm('Load demo seed dataset with synchronized mock residents?')) {
                   resetDemoDatabase();
                 }
               }}
-              title="Reset sample seed data"
-              className="text-[#6B6B76] hover:text-[#D4AF37] p-1.5 rounded-lg hover:bg-[#1F1F23] transition-colors"
+              title="Reset Demo Dataset"
+              className="px-2.5 py-1.5 rounded-xl bg-[#141414] hover:bg-[#6C4CFF]/20 text-[#0CC6FF] border border-[#0CC6FF]/20 text-[11px] font-mono flex items-center justify-center space-x-1.5 transition-all"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
+              <span>Demo Seed</span>
             </button>
           </div>
 
           {/* Admin Profile Widget */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#15151A] border border-[#23232A]">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#141414] border border-white/[0.08]">
             <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-full border border-[#D4AF37]/30 p-0.5">
-                <div className="w-full h-full rounded-full bg-[#1F1F23] flex items-center justify-center text-xs font-bold text-[#D4AF37]">
-                  SP
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF1E9A] to-[#6C4CFF] p-[1px]">
+                <div className="w-full h-full rounded-full bg-[#141414] flex items-center justify-center text-xs font-bold text-white">
+                  HM
                 </div>
               </div>
               <div className="truncate">
-                <p className="text-xs font-semibold text-white truncate">
-                  {settings?.admin_name || 'Sathwik Pala'}
+                <p className="text-xs font-bold text-white truncate">
+                  {settings?.admin_name || 'Hanura Media Admin'}
                 </p>
-                <p className="text-[10px] text-[#6B6B76] font-mono flex items-center">
-                  Executive Director
+                <p className="text-[10px] text-[#8E8E9F] font-mono flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Management Live
                 </p>
               </div>
             </div>
             <button
               onClick={() => handleNav('settings')}
               title="Account Settings"
-              className="text-[#6B6B76] hover:text-white p-1.5 hover:bg-[#1F1F23] rounded-lg transition-colors"
+              className="text-[#8E8E9F] hover:text-white p-1.5 hover:bg-white/[0.06] rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4" />
             </button>

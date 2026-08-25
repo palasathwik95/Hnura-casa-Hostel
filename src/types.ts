@@ -1,4 +1,12 @@
-export type SharingType = '1-Sharing' | '2-Sharing' | '3-Sharing' | '4-Sharing' | '5-Sharing';
+export type SharingType = 
+  | 'Single Private' 
+  | '1-Sharing' 
+  | '2-Sharing' 
+  | '3-Sharing' 
+  | '4-Sharing' 
+  | '5-Sharing' 
+  | '6-Sharing' 
+  | string;
 
 export type RoomStatus = 'AVAILABLE' | 'FULL' | 'MAINTENANCE';
 
@@ -51,6 +59,9 @@ export interface Bed {
   room_id: string;
   bed_number: number;
   status: BedStatus;
+  price?: number;
+  room_number?: string;
+  floor_number?: number;
   current_resident_id: string | null;
   current_resident_name?: string | null;
 }
@@ -74,6 +85,11 @@ export interface Floor {
   id: string;
   floor_number: number;
   name: string;
+  description?: string;
+  total_rooms?: number;
+  total_beds?: number;
+  occupied_beds?: number;
+  vacant_beds?: number;
   rooms: Room[];
 }
 

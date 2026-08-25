@@ -1,6 +1,6 @@
 {
   "name": "Remix Hanura Casa - Smart Hostel Management \u0026 Monitoring System",
-  "description": "Production-ready smart hostel and property management system featuring synchronized occupancy, room \u0026 bed matrix, financial transaction integrity, digital KYC, maintenance \u0026 complaints, WhatsApp center, and executive analytics.",
+  "description": "Ultra-premium smart hostel management OS featuring real-time room & bed matrix, financial transaction ledger, digital KYC verification vault, automated WhatsApp communications, and responsive mobile executive control powered by Hanura Media.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "property_name": "Hanura Casa Luxury Living",
+    "hostel_code": "HC-HYD-01",
+    "address": "Plot 42, Silicon Valley Layout, Madhapur, Hyderabad, Telangana 500081",
+    "contact_phone": "+91 98765 43210",
+    "contact_email": "management@hanuracasa.com",
+    "upi_id": "hanuracasa@icici",
+    "currency": "₹",
+    "default_due_day": 5,
+    "late_fee_grace_days": 5,
+    "late_fee_amount": 250,
+    "whatsapp_api_configured": true,
+    "whatsapp_phone_number_id": "109847291847291",
+    "whatsapp_business_account_id": "WABA-99882211",
+    "whatsapp_access_token": "EAAO...hc_prod_secure_token",
+    "whatsapp_webhook_secret": "whsec_hanura_casa_2026",
+    "admin_name": "Sathwik Pala (Director)",
+    "admin_email": "palasathwik95@gmail.com",
+    "admin_role": "Super Administrator"
+  },
+  "floors": [],
+  "rooms": [],
+  "beds": [],
+  "residents": [],
+  "payments": [],
+  "advances": [],
+  "expenses": [],
+  "staff": [],
+  "salary_payments": [],
+  "maintenance_requests": [],
+  "complaints": [],
+  "resident_documents": [],
+  "room_assignments": [],
+  "whatsapp_messages": [],
+  "notifications": [
+    {
+      "id": "NOTIF-INIT",
+      "title": "Clean Database Ready",
+      "message": "Welcome to Hanura Casa OS. All test data has been cleared. You can now start adding your floors, rooms, and enrolling residents.",
+      "type": "SYSTEM",
+      "timestamp": "2026-08-24T08:57:00.000Z",
+      "is_read": false
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "LOG-INIT",
+      "action": "SYSTEM_INITIALIZED",
+      "entity_type": "SYSTEM",
+      "entity_id": "ALL",
+      "details": "Database reset to clean production state for fresh live usage.",
+      "admin_user": "Sathwik Pala",
+      "timestamp": "2026-08-24T08:57:00.000Z"
+    }
+  ]
+}

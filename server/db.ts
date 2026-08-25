@@ -80,7 +80,7 @@ class DatabaseService {
 
     this.seedInitialDatabase();
     this.saveToDisk();
-    console.log('✅ Hanura Casa database initialized with synchronized demo seed data.');
+    console.log('✅ Hanura Casa database initialized with clean production data.');
   }
 
   private saveToDisk() {
@@ -92,6 +92,50 @@ class DatabaseService {
   }
 
   public seedInitialDatabase() {
+    this.data = {
+      settings: initialSettings,
+      floors: [],
+      rooms: [],
+      beds: [],
+      residents: [],
+      payments: [],
+      advances: [],
+      expenses: [],
+      staff: [],
+      salary_payments: [],
+      maintenance_requests: [],
+      complaints: [],
+      resident_documents: [],
+      room_assignments: [],
+      whatsapp_messages: [],
+      notifications: [
+        {
+          id: `NOTIF-${Date.now()}`,
+          title: 'System Initialized',
+          message: 'Hanura Casa OS is ready. Please configure your floors, rooms and beds in Settings.',
+          type: 'SYSTEM',
+          timestamp: new Date().toISOString(),
+          is_read: false
+        }
+      ],
+      audit_logs: [
+        {
+          id: `LOG-${Date.now()}`,
+          action: 'SYSTEM_INITIALIZED',
+          entity_type: 'SYSTEM',
+          entity_id: 'ALL',
+          details: 'System initialized with clean database ready for manual configuration.',
+          admin_user: 'Administrator',
+          timestamp: new Date().toISOString()
+        }
+      ]
+    };
+
+    this.saveToDisk();
+    console.log('✨ Clean database ready.');
+  }
+
+  public seedDemoData() {
     const { floors, rooms, beds } = generateFloorsAndRooms();
     const residents: Resident[] = [];
     const payments: Payment[] = [];
@@ -892,6 +936,9 @@ class DatabaseService {
   public createResident(residentData: Partial<Resident> & {
     target_room_id?: string;
     target_bed_id?: string;
+    room_id?: string;
+    bed_id?: string;
+    bed_number?: number;
     advance_amount?: number;
   }): Resident {
     const residentId = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -899,12 +946,21 @@ class DatabaseService {
     let room: Room | null = null;
     let bed: Bed | null = null;
 
-    if (residentData.target_room_id && residentData.target_bed_id) {
-      room = this.data.rooms.find(r => r.id === residentData.target_room_id) || null;
+    const targetRoomId = residentData.target_room_id || residentData.current_room_id || residentData.room_id;
+    const targetBedId = residentData.target_bed_id || residentData.current_bed_id || residentData.bed_id;
+    const targetBedNum = residentData.current_bed_number || residentData.bed_number;
+
+    if (targetRoomId) {
+      room = this.data.rooms.find(r => r.id === targetRoomId) || null;
       if (room) {
-        bed = room.beds.find(b => b.id === residentData.target_bed_id) || null;
-        if (bed && bed.status === 'OCCUPIED') {
-          throw new Error(`Bed ${bed.bed_number} in Room ${room.room_number} is already occupied.`);
+        if (targetBedId) {
+          bed = room.beds.find(b => b.id === targetBedId) || null;
+        }
+        if (!bed && targetBedNum !== undefined) {
+          bed = room.beds.find(b => b.bed_number === Number(targetBedNum)) || null;
+        }
+        if (!bed) {
+          bed = room.beds.find(b => b.status === 'VACANT') || null;
         }
       }
     }
@@ -955,7 +1011,7 @@ class DatabaseService {
 
       const occ = room.beds.filter(b => b.status === 'OCCUPIED').length;
       room.occupied_beds_count = occ;
-      room.vacant_beds_count = room.capacity - occ;
+      room.vacant_beds_count = Math.max(0, room.capacity - occ);
       room.status = occ === room.capacity ? 'FULL' : 'AVAILABLE';
 
       // Room assignment history
@@ -971,34 +1027,16 @@ class DatabaseService {
         end_date: null,
         status: 'ACTIVE'
       });
+
+      // Recalculate floor stats
+      this.recalculateFloorStats(room.floor_id);
     }
 
     this.data.residents.unshift(newResident);
 
-    // Opening Advance
-    const advAmount = Number(residentData.advance_amount || 0);
-    this.data.advances.push({
-      id: `ADV-${newResident.id}`,
-      resident_id: newResident.id,
-      resident_name: newResident.name,
-      opening_advance: advAmount,
-      current_advance: advAmount,
-      transactions: advAmount > 0 ? [
-        {
-          id: `ADV-TXN-${Date.now()}`,
-          type: 'DEPOSIT',
-          amount: advAmount,
-          date: newResident.joining_date,
-          reference: `ADV-INIT-${newResident.id}`,
-          notes: 'Security deposit received at check-in',
-          balance_after: advAmount
-        }
-      ] : []
-    });
-
     this.data.audit_logs.push({
       id: `AUD-${Date.now()}`,
-      admin_user: this.data.settings.admin_name,
+      admin_user: this.data.settings?.admin_name || 'Administrator',
       action: 'ADD_RESIDENT',
       entity_type: 'RESIDENT',
       entity_id: newResident.id,
@@ -1445,6 +1483,402 @@ class DatabaseService {
 
     this.saveToDisk();
     return newSal;
+  }
+
+  // ==========================================
+  // FLOORS, ROOMS & BEDS MANAGEMENT
+  // ==========================================
+
+  public createFloor(data: { floor_number: number; name?: string; description?: string }): Floor {
+    const existing = this.data.floors.find(f => f.floor_number === Number(data.floor_number));
+    if (existing) {
+      throw new Error(`Floor ${data.floor_number} already exists.`);
+    }
+
+    const floorId = `floor_${data.floor_number}`;
+    const newFloor: Floor = {
+      id: floorId,
+      floor_number: Number(data.floor_number),
+      name: data.name || (data.floor_number === 0 ? 'Ground Floor' : `Floor ${data.floor_number}`),
+      description: data.description || '',
+      total_rooms: 0,
+      total_beds: 0,
+      occupied_beds: 0,
+      vacant_beds: 0,
+      rooms: []
+    };
+
+    this.data.floors.push(newFloor);
+    this.data.floors.sort((a, b) => a.floor_number - b.floor_number);
+
+    this.data.audit_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      action: 'FLOOR_CREATED',
+      entity_type: 'FLOOR',
+      entity_id: floorId,
+      details: `Created Floor ${newFloor.floor_number} (${newFloor.name})`,
+      admin_user: this.data.settings?.admin_name || 'Administrator',
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newFloor;
+  }
+
+  public deleteFloor(floorId: string): void {
+    const floorIndex = this.data.floors.findIndex(f => f.id === floorId);
+    if (floorIndex === -1) throw new Error('Floor not found.');
+    const floor = this.data.floors[floorIndex];
+
+    // Check if any occupied rooms
+    const occupiedRoom = this.data.rooms.find(r => r.floor_id === floorId && r.occupied_beds_count > 0);
+    if (occupiedRoom) {
+      throw new Error(`Cannot delete floor ${floor.floor_number} because Room ${occupiedRoom.room_number} has active residents.`);
+    }
+
+    // Remove associated rooms and beds
+    const floorRoomIds = this.data.rooms.filter(r => r.floor_id === floorId).map(r => r.id);
+    this.data.rooms = this.data.rooms.filter(r => r.floor_id !== floorId);
+    this.data.beds = this.data.beds.filter(b => !floorRoomIds.includes(b.room_id));
+    this.data.floors.splice(floorIndex, 1);
+
+    this.data.audit_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      action: 'FLOOR_DELETED',
+      entity_type: 'FLOOR',
+      entity_id: floorId,
+      details: `Deleted Floor ${floor.floor_number} and all vacant suites`,
+      admin_user: this.data.settings?.admin_name || 'Administrator',
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+  }
+
+  public createRoom(data: {
+    floor_number: number;
+    room_number: string;
+    sharing_type?: string;
+    capacity: number;
+    monthly_fee: number;
+    amenities?: string[];
+  }): Room {
+    const cleanRoomNo = data.room_number.trim().toUpperCase();
+    const existing = this.data.rooms.find(r => r.room_number.toLowerCase() === cleanRoomNo.toLowerCase());
+    if (existing) {
+      throw new Error(`Room ${cleanRoomNo} already exists.`);
+    }
+
+    const floorNum = Number(data.floor_number);
+    let floor = this.data.floors.find(f => f.floor_number === floorNum);
+    if (!floor) {
+      floor = this.createFloor({
+        floor_number: floorNum,
+        name: floorNum === 0 ? 'Ground Floor' : `Floor ${floorNum}`
+      });
+    }
+
+    const cap = Math.max(1, Number(data.capacity) || 1);
+    const fee = Number(data.monthly_fee) || 8000;
+    const sharingType = data.sharing_type || (cap === 1 ? 'Single Private' : `${cap}-Sharing`);
+    const roomId = `room_${cleanRoomNo}`;
+
+    // Create Beds
+    const createdBeds: Bed[] = [];
+    for (let b = 1; b <= cap; b++) {
+      const bedId = `bed_${cleanRoomNo}_${b}`;
+      const bed: Bed = {
+        id: bedId,
+        bed_number: b,
+        room_id: roomId,
+        room_number: cleanRoomNo,
+        floor_number: floorNum,
+        status: 'VACANT',
+        price: fee,
+        current_resident_id: null,
+        current_resident_name: null
+      };
+      createdBeds.push(bed);
+      this.data.beds.push(bed);
+    }
+
+    const defaultAmenities = ['Attached Washroom', 'Wi-Fi', 'Wardrobe', 'Study Desk'];
+    const newRoom: Room = {
+      id: roomId,
+      floor_id: floor.id,
+      room_number: cleanRoomNo,
+      floor_number: floorNum,
+      capacity: cap,
+      occupied_beds_count: 0,
+      vacant_beds_count: cap,
+      sharing_type: sharingType,
+      monthly_fee: fee,
+      status: 'AVAILABLE',
+      amenities: data.amenities && data.amenities.length > 0 ? data.amenities : defaultAmenities,
+      beds: createdBeds
+    };
+
+    this.data.rooms.push(newRoom);
+    this.data.rooms.sort((a, b) => a.room_number.localeCompare(b.room_number, undefined, { numeric: true }));
+
+    // Update floor statistics
+    this.recalculateFloorStats(floor.id);
+
+    this.data.audit_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      action: 'ROOM_CREATED',
+      entity_type: 'ROOM',
+      entity_id: roomId,
+      details: `Created Suite ${cleanRoomNo} on Floor ${floorNum} with ${cap} beds at ₹${fee}/mo`,
+      admin_user: this.data.settings?.admin_name || 'Administrator',
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+    return newRoom;
+  }
+
+  public bulkCreateRooms(data: {
+    floor_number: number;
+    room_numbers?: string[];
+    prefix?: string;
+    start_number?: number;
+    end_number?: number;
+    capacity: number;
+    monthly_fee: number;
+    sharing_type?: string;
+    amenities?: string[];
+  }): Room[] {
+    const floorNum = Number(data.floor_number);
+    let floor = this.data.floors.find(f => f.floor_number === floorNum);
+    if (!floor) {
+      floor = this.createFloor({
+        floor_number: floorNum,
+        name: floorNum === 0 ? 'Ground Floor' : `Floor ${floorNum}`
+      });
+    }
+
+    let targetRoomNumbers: string[] = [];
+    if (data.room_numbers && data.room_numbers.length > 0) {
+      targetRoomNumbers = data.room_numbers;
+    } else if (data.start_number !== undefined && data.end_number !== undefined) {
+      const prefix = data.prefix !== undefined ? data.prefix.trim() : `${floorNum}`;
+      const start = Number(data.start_number);
+      const end = Number(data.end_number);
+      for (let i = start; i <= end; i++) {
+        // If start/end are 1 to 9 and prefix is floor number (e.g. 1), pad to 2 digits -> 101, 102
+        let numStr = String(i);
+        if (prefix && /^\d+$/.test(prefix) && prefix.length === 1 && i < 10) {
+          numStr = String(i).padStart(2, '0');
+        }
+        targetRoomNumbers.push(`${prefix}${numStr}`);
+      }
+    }
+
+    if (targetRoomNumbers.length === 0) {
+      throw new Error('No room numbers specified for bulk creation.');
+    }
+
+    const createdRooms: Room[] = [];
+    for (const rNo of targetRoomNumbers) {
+      const clean = rNo.trim().toUpperCase();
+      if (!clean) continue;
+      if (this.data.rooms.some(r => r.room_number.toLowerCase() === clean.toLowerCase())) {
+        continue; // skip duplicate
+      }
+
+      const room = this.createRoom({
+        floor_number: floorNum,
+        room_number: clean,
+        capacity: data.capacity,
+        monthly_fee: data.monthly_fee,
+        sharing_type: data.sharing_type,
+        amenities: data.amenities
+      });
+      createdRooms.push(room);
+    }
+
+    return createdRooms;
+  }
+
+  public updateRoom(id: string, updates: Partial<Room>): Room {
+    const room = this.data.rooms.find(r => r.id === id);
+    if (!room) throw new Error('Room not found.');
+
+    if (updates.monthly_fee !== undefined) {
+      room.monthly_fee = Number(updates.monthly_fee);
+      // Update vacant beds price
+      room.beds.forEach(b => {
+        if (b.status === 'VACANT') {
+          b.price = room.monthly_fee;
+        }
+      });
+      this.data.beds.forEach(b => {
+        if (b.room_id === id && b.status === 'VACANT') {
+          b.price = room.monthly_fee;
+        }
+      });
+    }
+
+    if (updates.sharing_type) room.sharing_type = updates.sharing_type;
+    if (updates.status) room.status = updates.status;
+    if (updates.amenities) room.amenities = updates.amenities;
+
+    this.saveToDisk();
+    return room;
+  }
+
+  public deleteRoom(id: string): void {
+    const roomIndex = this.data.rooms.findIndex(r => r.id === id);
+    if (roomIndex === -1) throw new Error('Room not found.');
+    const room = this.data.rooms[roomIndex];
+
+    if (room.occupied_beds_count > 0) {
+      throw new Error(`Cannot delete Room ${room.room_number} because it has ${room.occupied_beds_count} active resident(s).`);
+    }
+
+    // Remove beds
+    this.data.beds = this.data.beds.filter(b => b.room_id !== id);
+    this.data.rooms.splice(roomIndex, 1);
+
+    // Update floor stats
+    this.recalculateFloorStats(room.floor_id);
+
+    this.data.audit_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      action: 'ROOM_DELETED',
+      entity_type: 'ROOM',
+      entity_id: id,
+      details: `Deleted Room ${room.room_number} from Floor ${room.floor_number}`,
+      admin_user: this.data.settings?.admin_name || 'Administrator',
+      timestamp: new Date().toISOString()
+    });
+
+    this.saveToDisk();
+  }
+
+  public addBedToRoom(roomId: string, price?: number): Bed {
+    const room = this.data.rooms.find(r => r.id === roomId);
+    if (!room) throw new Error('Room not found.');
+
+    const nextBedNum = (room.beds.length > 0 ? Math.max(...room.beds.map(b => b.bed_number)) : 0) + 1;
+    const bedId = `bed_${room.room_number}_${nextBedNum}`;
+    const bedFee = price !== undefined ? Number(price) : room.monthly_fee;
+
+    const newBed: Bed = {
+      id: bedId,
+      bed_number: nextBedNum,
+      room_id: room.id,
+      room_number: room.room_number,
+      floor_number: room.floor_number,
+      status: 'VACANT',
+      price: bedFee,
+      current_resident_id: null,
+      current_resident_name: null
+    };
+
+    room.beds.push(newBed);
+    this.data.beds.push(newBed);
+    room.capacity = room.beds.length;
+    room.vacant_beds_count += 1;
+    room.sharing_type = `${room.capacity}-Sharing`;
+
+    this.recalculateFloorStats(room.floor_id);
+    this.saveToDisk();
+    return newBed;
+  }
+
+  public deleteBed(bedId: string): void {
+    const bedIndex = this.data.beds.findIndex(b => b.id === bedId);
+    if (bedIndex === -1) throw new Error('Bed not found.');
+    const bed = this.data.beds[bedIndex];
+
+    if (bed.status === 'OCCUPIED') {
+      throw new Error(`Cannot delete Bed ${bed.bed_number} because it is occupied by ${bed.current_resident_name || 'a resident'}.`);
+    }
+
+    const room = this.data.rooms.find(r => r.id === bed.room_id);
+    if (room) {
+      room.beds = room.beds.filter(b => b.id !== bedId);
+      room.capacity = Math.max(0, room.beds.length);
+      room.vacant_beds_count = room.beds.filter(b => b.status === 'VACANT').length;
+      room.occupied_beds_count = room.beds.filter(b => b.status === 'OCCUPIED').length;
+      room.sharing_type = room.capacity === 1 ? 'Single Private' : `${room.capacity}-Sharing`;
+      this.recalculateFloorStats(room.floor_id);
+    }
+
+    this.data.beds.splice(bedIndex, 1);
+    this.saveToDisk();
+  }
+
+  public decreaseBedInRoom(roomId: string): Bed {
+    const room = this.data.rooms.find(r => r.id === roomId);
+    if (!room) throw new Error('Room not found.');
+
+    const vacantBeds = room.beds.filter(b => b.status === 'VACANT');
+    if (vacantBeds.length === 0) {
+      throw new Error(`Cannot decrease beds in Room ${room.room_number}: all ${room.capacity} beds are currently occupied by active residents.`);
+    }
+
+    const bedToRemove = vacantBeds[vacantBeds.length - 1];
+    this.deleteBed(bedToRemove.id);
+    return bedToRemove;
+  }
+
+  private recalculateFloorStats(floorId: string) {
+    const floor = this.data.floors.find(f => f.id === floorId);
+    if (!floor) return;
+
+    const floorRooms = this.data.rooms.filter(r => r.floor_id === floorId);
+    floor.total_rooms = floorRooms.length;
+    floor.total_beds = floorRooms.reduce((sum, r) => sum + r.capacity, 0);
+    floor.occupied_beds = floorRooms.reduce((sum, r) => sum + r.occupied_beds_count, 0);
+    floor.vacant_beds = floor.total_beds - floor.occupied_beds;
+    floor.rooms = floorRooms;
+  }
+
+  public clearAllData(): void {
+    this.data = {
+      settings: this.data.settings || initialSettings,
+      floors: [],
+      rooms: [],
+      beds: [],
+      residents: [],
+      payments: [],
+      advances: [],
+      expenses: [],
+      staff: [],
+      salary_payments: [],
+      maintenance_requests: [],
+      complaints: [],
+      resident_documents: [],
+      room_assignments: [],
+      whatsapp_messages: [],
+      notifications: [
+        {
+          id: `NOTIF-${Date.now()}`,
+          title: 'System Initialized',
+          message: 'All dummy records removed. Add your floors, rooms and beds in Settings.',
+          type: 'SYSTEM',
+          timestamp: new Date().toISOString(),
+          is_read: false
+        }
+      ],
+      audit_logs: [
+        {
+          id: `LOG-${Date.now()}`,
+          action: 'DATABASE_CLEARED',
+          entity_type: 'SYSTEM',
+          entity_id: 'ALL',
+          details: 'All data cleared. System ready for manual entry.',
+          admin_user: this.data.settings?.admin_name || 'Administrator',
+          timestamp: new Date().toISOString()
+        }
+      ]
+    };
+
+    this.saveToDisk();
+    console.log('🧹 Cleaned all records. System is now 100% fresh with 0 dummy records.');
   }
 }
 

@@ -46,12 +46,16 @@ export const WhatsAppCenter: React.FC = () => {
   const [copiedPreview, setCopiedPreview] = useState(false);
   const [batchRunnerIndex, setBatchRunnerIndex] = useState<number | null>(null);
 
+  // Direct Number Test State
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [testRecipientName, setTestRecipientName] = useState('Valued Resident');
+
   // Compute pending residents for August
   const pendingResidents = residents.filter(r => {
     if (r.status !== 'ACTIVE') return false;
     const payment = payments.find(p => p.resident_id === r.id && p.month === '2026-08');
     const paid = payment ? payment.amount_paid : 0;
-    return r.monthly_fee - paid > 0;
+    return (r.monthly_fee || 0) - paid > 0;
   });
 
   const kycPendingResidents = residents.filter(
@@ -108,6 +112,38 @@ export const WhatsAppCenter: React.FC = () => {
     });
   };
 
+  // Direct test message to any custom phone number
+  const handleDirectSendCustomNumber = () => {
+    if (!testPhoneNumber.trim()) {
+      addToast('error', 'Phone Required', 'Please enter a mobile number to test.');
+      return;
+    }
+
+    const testResidentMock: any = {
+      id: 'TEST-TEMP',
+      name: testRecipientName.trim() || 'Resident',
+      phone: testPhoneNumber.trim(),
+      whatsapp: testPhoneNumber.trim(),
+      current_room_number: '101',
+      current_bed_number: '1',
+      monthly_fee: 8500,
+      kyc_status: 'PENDING',
+      kyc_doc_type: 'AADHAAR'
+    };
+
+    const msg = buildWhatsAppMessage({
+      type: selectedTemplate,
+      resident: testResidentMock,
+      settings,
+      month: 'August 2026',
+      customText: customNoticeText,
+      balance: 8500
+    });
+
+    launchDirectWhatsApp(testPhoneNumber.trim(), msg);
+    addToast('success', 'WhatsApp Launched', `Opened WhatsApp chat for ${testPhoneNumber.trim()}`);
+  };
+
   // Dispatch all & open first in direct tab
   const handleDispatchAll = async () => {
     if (targets.length === 0) {
@@ -117,7 +153,6 @@ export const WhatsAppCenter: React.FC = () => {
 
     setIsSending(true);
     try {
-      // 1. If 1 recipient, directly launch WhatsApp
       if (targets.length === 1) {
         await sendDirectWhatsApp({
           resident: targets[0],
@@ -127,7 +162,6 @@ export const WhatsAppCenter: React.FC = () => {
           openDirect: true
         });
       } else {
-        // Multi-recipient: Log all to database
         await sendWhatsApp({
           resident_ids: targets.map(r => r.id),
           message_type: selectedTemplate,
@@ -136,9 +170,8 @@ export const WhatsAppCenter: React.FC = () => {
           autoOpenDirect: false
         });
 
-        // Start interactive sequential batch launcher
         setBatchRunnerIndex(0);
-        addToast('success', 'Broadcast Logged', `Recorded ${targets.length} messages. Launching direct WhatsApp dispatcher.`);
+        addToast('success', 'Broadcast Logged', `Recorded ${targets.length} messages. Ready for direct dispatch.`);
       }
     } catch (err) {
       // handled
@@ -165,24 +198,26 @@ export const WhatsAppCenter: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="bg-[#0F0F12] p-6 rounded-2xl border border-[#1F1F23] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="bg-[#141414] p-6 lg:p-8 rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#25D366]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="z-10">
           <div className="flex items-center space-x-2.5">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#6B6B76]">
-              Communication Engine
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#8E8E9F]">
+              OMNICHANNEL BROADCAST & AUTOMATION
             </span>
-            <span className="text-xs text-[#25D366] font-mono">• Direct WhatsApp & Cloud API</span>
+            <span className="text-xs text-[#25D366] font-mono font-bold">• WhatsApp Engine</span>
           </div>
-          <h2 className="text-2xl font-serif italic text-white mt-1">
-            WhatsApp Dispatch & Automation Center
+          <h2 className="text-2xl font-heading font-extrabold text-white mt-1">
+            WhatsApp Dispatch & Automation Hub
           </h2>
-          <p className="text-xs text-[#6B6B76] mt-1">
+          <p className="text-xs text-[#8E8E9F] mt-1">
             Instant direct WhatsApp messaging (wa.me), pre-filled rent reminders, digital receipts & KYC alerts.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="px-3.5 py-1.5 rounded-full bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 text-xs font-mono font-medium flex items-center space-x-2">
+        <div className="flex items-center space-x-2 z-10">
+          <span className="px-4 py-2 rounded-xl bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 text-xs font-mono font-bold flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
             <span>Direct WhatsApp Ready (wa.me)</span>
           </span>
@@ -191,17 +226,17 @@ export const WhatsAppCenter: React.FC = () => {
 
       {/* Sequential Batch Dispatcher Modal / Overlay */}
       {batchRunnerIndex !== null && targets[batchRunnerIndex] && (
-        <div className="bg-gradient-to-r from-[#15151A] to-[#1F1F23] border-2 border-[#25D366]/40 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl animate-fadeIn">
+        <div className="bg-gradient-to-r from-[#141414] to-[#1a1a24] border-2 border-[#25D366]/40 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xl animate-fadeIn">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#25D366] text-black text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#25D366] text-black text-[10px] font-mono font-bold uppercase tracking-wider">
                 Direct Dispatcher ({batchRunnerIndex + 1} of {targets.length})
               </span>
               <span className="text-xs text-white font-medium">
-                Next Recipient: <strong className="text-[#D4AF37]">{targets[batchRunnerIndex].name}</strong> ({targets[batchRunnerIndex].phone})
+                Next Recipient: <strong className="text-[#FF1E9A]">{targets[batchRunnerIndex].name}</strong> ({targets[batchRunnerIndex].phone})
               </span>
             </div>
-            <p className="text-xs text-[#A1A1AA]">
+            <p className="text-xs text-[#8E8E9F]">
               Click the button below to open this resident's WhatsApp chat with their tailored message pre-filled.
             </p>
           </div>
@@ -209,7 +244,7 @@ export const WhatsAppCenter: React.FC = () => {
           <div className="flex items-center space-x-2 shrink-0">
             <button
               onClick={() => handleBatchSendNext(batchRunnerIndex)}
-              className="px-5 py-2.5 bg-[#25D366] text-black text-xs font-bold rounded-full hover:brightness-110 flex items-center space-x-2 shadow-lg transition-all"
+              className="px-5 py-2.5 bg-[#25D366] text-black text-xs font-bold rounded-xl hover:brightness-110 flex items-center space-x-2 shadow-lg transition-all"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Open WhatsApp for {targets[batchRunnerIndex].name.split(' ')[0]}</span>
@@ -217,7 +252,7 @@ export const WhatsAppCenter: React.FC = () => {
             </button>
             <button
               onClick={() => setBatchRunnerIndex(null)}
-              className="px-3 py-2 bg-[#15151A] text-[#6B6B76] hover:text-white rounded-full text-xs border border-[#23232A]"
+              className="px-4 py-2.5 bg-[#0B0B0C] text-[#8E8E9F] hover:text-white rounded-xl text-xs font-bold border border-white/[0.08]"
             >
               Cancel
             </button>
@@ -228,15 +263,15 @@ export const WhatsAppCenter: React.FC = () => {
       {/* Broadcast Composer Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Message Settings & Target Selector */}
-        <div className="bg-[#0F0F12] p-6 rounded-2xl border border-[#1F1F23] space-y-4">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-[#D4AF37] flex items-center space-x-2">
-            <Send className="w-3.5 h-3.5 text-[#D4AF37]" />
+        <div className="bg-[#141414] p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-xl">
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0CC6FF] flex items-center space-x-2">
+            <Send className="w-3.5 h-3.5 text-[#0CC6FF]" />
             <span>1. Configure Message & Audience</span>
           </h3>
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="block text-[#6B6B76] mb-1.5 font-medium">Select Message Template</label>
+              <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-2">Select Message Template</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { id: 'PAYMENT_REMINDER', label: 'Rent Reminder' },
@@ -249,10 +284,10 @@ export const WhatsAppCenter: React.FC = () => {
                     key={tmpl.id}
                     type="button"
                     onClick={() => setSelectedTemplate(tmpl.id as any)}
-                    className={`p-2.5 rounded-xl text-left border transition-all text-xs ${
+                    className={`p-3 rounded-xl text-left border transition-all text-xs font-bold ${
                       selectedTemplate === tmpl.id
-                        ? 'bg-[#15151A] border-[#25D366] text-[#25D366] font-medium shadow-sm'
-                        : 'bg-[#15151A]/50 border-[#23232A] text-[#6B6B76] hover:text-white'
+                        ? 'bg-[#0B0B0C] border-[#25D366] text-[#25D366] shadow-[0_0_15px_rgba(37,211,102,0.2)]'
+                        : 'bg-[#0B0B0C]/60 border-white/[0.06] text-[#8E8E9F] hover:text-white'
                     }`}
                   >
                     {tmpl.label}
@@ -262,19 +297,19 @@ export const WhatsAppCenter: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[#6B6B76] mb-1.5 font-medium">Target Recipient Audience</label>
+              <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-2">Target Recipient Audience</label>
               <select
                 value={recipientTarget}
                 onChange={e => setRecipientTarget(e.target.value as any)}
-                className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-[#D4AF37] cursor-pointer"
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-[#FF1E9A] cursor-pointer"
               >
-                <option value="PENDING_DUES" className="bg-[#15151A]">
+                <option value="PENDING_DUES" className="bg-[#141414]">
                   August Dues Pending Residents ({pendingResidents.length} Residents)
                 </option>
-                <option value="KYC_PENDING" className="bg-[#15151A]">
+                <option value="KYC_PENDING" className="bg-[#141414]">
                   Unverified KYC Residents ({kycPendingResidents.length} Residents)
                 </option>
-                <option value="ALL_ACTIVE" className="bg-[#15151A]">
+                <option value="ALL_ACTIVE" className="bg-[#141414]">
                   All Active Residents ({residents.filter(r => r.status === 'ACTIVE').length} Residents)
                 </option>
               </select>
@@ -283,27 +318,27 @@ export const WhatsAppCenter: React.FC = () => {
             {(selectedTemplate === 'GENERAL_ANNOUNCEMENT' || selectedTemplate === 'CUSTOM') && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[#6B6B76] font-medium">Custom Message Body</label>
-                  <span className="text-[10px] text-[#6B6B76] font-mono">Use {'{{name}}'}, {'{{room}}'}, {'{{balance}}'}, {'{{upi}}'}</span>
+                  <label className="text-[#8E8E9F] font-bold uppercase text-[10px]">Custom Message Body</label>
+                  <span className="text-[10px] text-[#8E8E9F] font-mono">Use {'{{name}}'}, {'{{room}}'}, {'{{balance}}'}, {'{{upi}}'}</span>
                 </div>
                 <textarea
                   rows={4}
                   value={customNoticeText}
                   onChange={e => setCustomNoticeText(e.target.value)}
                   placeholder={selectedTemplate === 'CUSTOM' ? 'Hello {{name}}, your balance for Room {{room}} is {{balance}}.' : 'Enter notice to broadcast to residents...'}
-                  className="w-full bg-[#15151A] border border-[#23232A] rounded-xl p-3 text-white focus:outline-none focus:border-[#25D366] text-xs font-mono"
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl p-3 text-white placeholder-[#8E8E9F] focus:outline-none focus:border-[#25D366] text-xs font-mono"
                 />
               </div>
             )}
 
-            <div className="pt-3 border-t border-[#1F1F23] flex items-center justify-between">
-              <span className="text-[#6B6B76] font-mono text-xs">
+            <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+              <span className="text-[#8E8E9F] font-mono text-xs">
                 Target count: <strong className="text-white font-bold">{targets.length}</strong> resident(s)
               </span>
               <button
                 onClick={handleDispatchAll}
                 disabled={isSending || targets.length === 0}
-                className="px-5 py-2 bg-[#25D366] text-black font-semibold rounded-full hover:brightness-110 transition-all flex items-center space-x-2 active:scale-95 disabled:opacity-50 shadow-md text-xs"
+                className="px-5 py-2.5 bg-gradient-to-r from-[#25D366] to-[#128C7E] text-black font-bold rounded-xl hover:brightness-110 transition-all flex items-center space-x-2 active:scale-95 disabled:opacity-50 shadow-lg text-xs"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{isSending ? 'Dispatching...' : targets.length === 1 ? 'Send Direct WhatsApp' : `Broadcast WhatsApp (${targets.length})`}</span>
@@ -313,13 +348,13 @@ export const WhatsAppCenter: React.FC = () => {
         </div>
 
         {/* Right: Real WhatsApp Simulator & Live Preview */}
-        <div className="bg-[#0F0F12] p-6 rounded-2xl border border-[#1F1F23] flex flex-col justify-between space-y-4">
+        <div className="bg-[#141414] p-6 rounded-2xl border border-white/[0.08] flex flex-col justify-between space-y-4 shadow-xl">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F1F23]">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#6B6B76]">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#8E8E9F]">
                 2. Live WhatsApp Preview
               </span>
-              <span className="text-[10px] font-mono text-[#25D366] flex items-center space-x-1">
+              <span className="text-[10px] font-mono text-[#25D366] flex items-center space-x-1 font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]" />
                 <span>Format: WhatsApp Markdown</span>
               </span>
@@ -327,19 +362,19 @@ export const WhatsAppCenter: React.FC = () => {
 
             {/* Simulated WhatsApp Chat Bubble */}
             <div className="mt-3 bg-[#0B141A] p-4 rounded-2xl border border-[#1F2C34] space-y-2">
-              <div className="flex items-center space-x-2 pb-2 border-b border-[#1F2C34]">
-                <div className="w-7 h-7 rounded-full bg-[#D4AF37] flex items-center justify-center text-black font-serif font-bold text-xs">
-                  HC
+              <div className="flex items-center space-x-2.5 pb-2 border-b border-[#1F2C34]">
+                <div className="w-8 h-8 rounded-full bg-[#FF1E9A] flex items-center justify-center text-white font-bold text-xs font-mono">
+                  HM
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-white">Hanura Casa Official</p>
-                  <p className="text-[9px] text-[#25D366]">Recipient: {sampleResident ? `${sampleResident.name} (${sampleResident.phone})` : 'Sample'}</p>
+                  <p className="text-xs font-bold text-white">Hanura Casa Official</p>
+                  <p className="text-[9px] text-[#25D366] font-mono">Recipient: {sampleResident ? `${sampleResident.name} (${sampleResident.phone})` : 'Sample'}</p>
                 </div>
               </div>
 
-              <div className="bg-[#15151A] border border-[#23232A] p-3.5 rounded-xl text-white text-xs whitespace-pre-wrap font-sans leading-relaxed shadow max-h-56 overflow-y-auto">
+              <div className="bg-[#141414] border border-white/[0.08] p-4 rounded-xl text-white text-xs whitespace-pre-wrap font-sans leading-relaxed shadow-md max-h-56 overflow-y-auto">
                 {currentPreviewText}
-                <div className="text-[9px] text-[#6B6B76] text-right mt-2 flex items-center justify-end space-x-1 font-mono">
+                <div className="text-[9px] text-[#8E8E9F] text-right mt-2 flex items-center justify-end space-x-1 font-mono">
                   <span>10:45 AM</span>
                   <span className="text-[#25D366]">✓✓</span>
                 </div>
@@ -347,19 +382,19 @@ export const WhatsAppCenter: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-[#15151A] rounded-xl border border-[#23232A] text-xs text-[#D1D1D1] flex items-center justify-between gap-2">
+          <div className="p-3 bg-[#0B0B0C] rounded-xl border border-white/[0.08] text-xs text-[#E4E4E7] flex items-center justify-between gap-2">
             <button
               onClick={handleCopyPreview}
-              className="flex items-center space-x-1.5 text-[#6B6B76] hover:text-white transition-colors"
+              className="flex items-center space-x-1.5 text-[#8E8E9F] hover:text-white transition-colors font-bold"
             >
-              {copiedPreview ? <Check className="w-3.5 h-3.5 text-[#4CAF50]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedPreview ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedPreview ? 'Copied!' : 'Copy Text'}</span>
             </button>
 
             {sampleResident && (
               <button
                 onClick={() => handleDirectSendOne(sampleResident)}
-                className="px-3.5 py-1.5 bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40 hover:bg-[#25D366]/30 rounded-full font-semibold transition-all flex items-center space-x-1.5"
+                className="px-4 py-1.5 bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40 hover:bg-[#25D366]/30 rounded-xl font-bold transition-all flex items-center space-x-1.5 text-xs"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Test Chat to {sampleResident.name.split(' ')[0]}</span>
@@ -370,34 +405,93 @@ export const WhatsAppCenter: React.FC = () => {
         </div>
       </div>
 
-      {/* Target Recipient List with 1-Click Direct WhatsApp Action */}
-      <div className="bg-[#0F0F12] rounded-2xl border border-[#1F1F23] overflow-hidden">
-        <div className="p-4 bg-[#15151A] border-b border-[#1F1F23] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-semibold text-white">Target Recipients ({targets.length})</h3>
-            <p className="text-[11px] text-[#6B6B76]">Click "Direct WhatsApp" to instantly open the chat in WhatsApp Web or Desktop.</p>
+      {/* Direct Quick Mobile Number Tester */}
+      <div className="bg-gradient-to-r from-[#141414] to-[#121c16] p-6 rounded-2xl border border-[#25D366]/30 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 flex items-center justify-center text-[#25D366]">
+              <Phone className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white">Direct WhatsApp Sandbox & Mobile Tester</h4>
+              <p className="text-xs text-[#8E8E9F]">
+                Test real WhatsApp dispatching immediately on any mobile number with current selected template.
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-mono text-[#D4AF37] bg-[#15151A] px-3 py-1 rounded-full border border-[#23232A]">
+          <span className="text-[10px] font-mono text-[#25D366] bg-[#25D366]/10 px-3 py-1 rounded-full border border-[#25D366]/30 font-bold w-fit">
+            • Instant wa.me Link
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">
+              Mobile Number (with country code if needed)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 9876543210 or 919876543210"
+              value={testPhoneNumber}
+              onChange={e => setTestPhoneNumber(e.target.value)}
+              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono text-xs focus:outline-none focus:border-[#25D366]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">
+              Recipient Name (for template preview)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Sathwik Pala"
+              value={testRecipientName}
+              onChange={e => setTestRecipientName(e.target.value)}
+              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-[#25D366]"
+            />
+          </div>
+
+          <div className="flex flex-col justify-end">
+            <button
+              onClick={handleDirectSendCustomNumber}
+              className="w-full py-2 bg-[#25D366] text-black font-bold rounded-xl text-xs hover:brightness-110 shadow-[0_0_20px_rgba(37,211,102,0.35)] active:scale-95 transition-all flex items-center justify-center space-x-2"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Launch Test WhatsApp Chat</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Target Recipient List with 1-Click Direct WhatsApp Action */}
+      <div className="bg-[#141414] rounded-2xl border border-white/[0.08] overflow-hidden shadow-xl">
+        <div className="p-4 bg-[#0B0B0C] border-b border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-bold text-white">Target Recipients ({targets.length})</h3>
+            <p className="text-[11px] text-[#8E8E9F]">Click "Direct WhatsApp" to instantly launch chat in WhatsApp Web or App.</p>
+          </div>
+          <span className="text-xs font-mono text-[#0CC6FF] bg-[#141414] px-3 py-1 rounded-xl border border-white/[0.08] font-bold">
             Audience: {recipientTarget.replace('_', ' ')}
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#D1D1D1]">
-            <thead className="bg-[#15151A] text-[#6B6B76] uppercase font-mono text-[10px] tracking-wider border-b border-[#1F1F23]">
+          <table className="w-full text-left text-xs text-[#E4E4E7]">
+            <thead className="bg-[#0B0B0C] text-[#8E8E9F] uppercase font-mono font-bold text-[10px] tracking-wider border-b border-white/[0.08]">
               <tr>
-                <th className="py-3 px-4">Resident</th>
-                <th className="py-3 px-3">Room / Bed</th>
-                <th className="py-3 px-3">Phone</th>
-                <th className="py-3 px-3">Aug Balance</th>
-                <th className="py-3 px-3">KYC Status</th>
-                <th className="py-3 px-4 text-right">Direct Action</th>
+                <th className="py-3.5 px-4">Resident</th>
+                <th className="py-3.5 px-3">Room / Bed</th>
+                <th className="py-3.5 px-3">Phone</th>
+                <th className="py-3.5 px-3">Aug Balance</th>
+                <th className="py-3.5 px-3">KYC Status</th>
+                <th className="py-3.5 px-4 text-right">Direct Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1F1F23]">
+            <tbody className="divide-y divide-white/[0.05]">
               {targets.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#6B6B76]">
+                  <td colSpan={6} className="py-8 text-center text-[#8E8E9F]">
                     No residents in this target group.
                   </td>
                 </tr>
@@ -408,47 +502,47 @@ export const WhatsAppCenter: React.FC = () => {
                   const bal = Math.max(0, (r.monthly_fee || 0) - paid);
 
                   return (
-                    <tr key={r.id} className="hover:bg-[#15151A]/60 transition-colors">
-                      <td className="py-3 px-4">
+                    <tr key={r.id} className="hover:bg-white/[0.03] transition-colors">
+                      <td className="py-3.5 px-4">
                         <div className="flex items-center space-x-2.5">
                           <img
-                            src={r.photo_url}
+                            src={r.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
                             alt={r.name}
-                            className="w-7 h-7 rounded-full object-cover border border-[#23232A]"
+                            className="w-8 h-8 rounded-xl object-cover border border-white/[0.08]"
                           />
                           <div>
-                            <p className="font-semibold text-white">{r.name}</p>
-                            <p className="text-[10px] text-[#6B6B76] font-mono">{r.id}</p>
+                            <p className="font-bold text-white">{r.name}</p>
+                            <p className="text-[10px] text-[#8E8E9F] font-mono">{r.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-3 font-mono">
-                        <span className="text-white">Rm {r.current_room_number || 'N/A'}</span>
-                        <span className="text-[#6B6B76] text-[10px] ml-1.5">(Bed {r.current_bed_number || '1'})</span>
+                      <td className="py-3.5 px-3 font-mono">
+                        <span className="text-white font-bold">Rm {r.current_room_number || 'N/A'}</span>
+                        <span className="text-[#8E8E9F] text-[10px] ml-1.5">(Bed #{r.current_bed_number || '1'})</span>
                       </td>
-                      <td className="py-3 px-3 font-mono text-[#D1D1D1]">
+                      <td className="py-3.5 px-3 font-mono text-[#E4E4E7]">
                         {r.phone}
                       </td>
-                      <td className="py-3 px-3 font-mono">
+                      <td className="py-3.5 px-3 font-mono">
                         {(bal || 0) > 0 ? (
-                          <span className="text-[#D4AF37] font-bold">₹{(bal || 0).toLocaleString('en-IN')}</span>
+                          <span className="text-[#FF6F3C] font-bold">₹{(bal || 0).toLocaleString('en-IN')}</span>
                         ) : (
-                          <span className="text-[#4CAF50]">Cleared</span>
+                          <span className="text-emerald-400 font-bold">Cleared</span>
                         )}
                       </td>
-                      <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono uppercase ${
+                      <td className="py-3.5 px-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase ${
                           r.kyc_status === 'VERIFIED'
-                            ? 'bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20'
-                            : 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
                         }`}>
                           {r.kyc_status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => handleDirectSendOne(r)}
-                          className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#25D366] border border-[#25D366]/30 font-medium transition-all"
+                          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#25D366] border border-[#25D366]/30 font-bold transition-all text-xs"
                         >
                           <Send className="w-3 h-3" />
                           <span>Direct WhatsApp</span>
@@ -459,58 +553,6 @@ export const WhatsAppCenter: React.FC = () => {
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Dispatched History Logs Table */}
-      <div className="bg-[#0F0F12] rounded-2xl border border-[#1F1F23] overflow-hidden">
-        <div className="p-4 bg-[#15151A] border-b border-[#1F1F23] flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-white">Broadcast Delivery & Transmission Logs</h3>
-            <p className="text-[11px] text-[#6B6B76]">Audit trail of all WhatsApp messages dispatched through the system.</p>
-          </div>
-          <span className="text-xs font-mono text-[#6B6B76]">{whatsappMessages.length} Messages Dispatched</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#D1D1D1]">
-            <thead className="bg-[#15151A] text-[#6B6B76] uppercase font-mono text-[10px] tracking-wider border-b border-[#1F1F23]">
-              <tr>
-                <th className="py-3 px-4">Message ID</th>
-                <th className="py-3 px-3">Resident</th>
-                <th className="py-3 px-3">Type</th>
-                <th className="py-3 px-3">Message Content</th>
-                <th className="py-3 px-3">Phone</th>
-                <th className="py-3 px-3">Timestamp</th>
-                <th className="py-3 px-4 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1F1F23]">
-              {whatsappMessages.slice(0, 10).map(msg => (
-                <tr key={msg.id} className="hover:bg-[#15151A]/60 transition-colors">
-                  <td className="py-3 px-4 font-mono font-medium text-white">{msg.id}</td>
-                  <td className="py-3 px-3 font-medium text-white">{msg.resident_name}</td>
-                  <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-full bg-[#15151A] text-[#D4AF37] border border-[#23232A] font-mono text-[10px]">
-                      {msg.message_type}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-[#D1D1D1] truncate max-w-xs">
-                    {msg.message_content}
-                  </td>
-                  <td className="py-3 px-3 font-mono text-[#6B6B76]">{msg.phone}</td>
-                  <td className="py-3 px-3 font-mono text-[10px] text-[#6B6B76]">
-                    {new Date(msg?.sent_at || Date.now()).toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20 font-mono text-[9px] uppercase font-medium">
-                      {msg.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>

@@ -9,7 +9,8 @@ import {
   Clock,
   AlertTriangle,
   User,
-  DollarSign
+  DollarSign,
+  Sparkles
 } from 'lucide-react';
 
 export const Maintenance: React.FC = () => {
@@ -69,25 +70,27 @@ export const Maintenance: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="bg-[#0F0F12] p-6 rounded-2xl border border-[#1F1F23] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="bg-[#141414] p-6 lg:p-8 rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#0CC6FF]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="z-10">
           <div className="flex items-center space-x-2.5">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#6B6B76]">
-              Facility & Asset Operations
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#8E8E9F]">
+              FACILITY ASSETS & HARDWARE OPERATIONS
             </span>
-            <span className="text-xs text-[#D4AF37] font-mono">• Active Work Orders</span>
+            <span className="text-xs text-[#0CC6FF] font-mono font-bold">• Active Work Orders</span>
           </div>
-          <h2 className="text-2xl font-serif italic text-white mt-1">
+          <h2 className="text-2xl font-heading font-extrabold text-white mt-1">
             Asset Maintenance & Work Orders
           </h2>
-          <p className="text-xs text-[#6B6B76] mt-1">
+          <p className="text-xs text-[#8E8E9F] mt-1">
             Preventative maintenance scheduling, technician dispatch, and expenditure tracking.
           </p>
         </div>
 
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#D4AF37] text-black text-xs font-semibold hover:brightness-110 active:scale-95 transition-all shadow-md"
+          className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white text-xs font-bold shadow-[0_0_20px_rgba(255,30,154,0.35)] hover:brightness-110 active:scale-95 transition-all z-10 w-fit"
         >
           <Plus className="w-4 h-4" />
           <span>New Work Order</span>
@@ -95,27 +98,27 @@ export const Maintenance: React.FC = () => {
       </div>
 
       {/* Filter and Search */}
-      <div className="bg-[#0F0F12] p-4 rounded-2xl border border-[#1F1F23] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#141414] p-4 rounded-2xl border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#6B6B76] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#8E8E9F] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search maintenance jobs by room, issue, category or staff..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-[#15151A] border border-[#23232A] rounded-full pl-10 pr-4 py-2 text-xs text-white placeholder-[#6B6B76] focus:outline-none focus:border-[#D4AF37]"
+            className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-[#8E8E9F] focus:outline-none focus:border-[#0CC6FF] transition-colors"
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'].map(st => (
             <button
               key={st}
               onClick={() => setStatusFilter(st as any)}
-              className={`px-3.5 py-1.5 rounded-full text-xs transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === st
-                  ? 'bg-[#D4AF37] text-black font-semibold shadow-md'
-                  : 'bg-[#15151A] text-[#6B6B76] hover:text-white'
+                  ? 'bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white shadow-md'
+                  : 'bg-[#0B0B0C] text-[#8E8E9F] hover:text-white border border-white/[0.05]'
               }`}
             >
               {st === 'ALL' ? 'All Jobs' : st}
@@ -129,55 +132,55 @@ export const Maintenance: React.FC = () => {
         {filteredRequests.map(req => (
           <div
             key={req.id}
-            className="bg-[#0F0F12] p-5 rounded-2xl border border-[#1F1F23] space-y-3.5 flex flex-col justify-between"
+            className="bg-[#141414] p-5 rounded-2xl border border-white/[0.08] space-y-4 flex flex-col justify-between shadow-lg"
           >
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#15151A] text-[#D4AF37] border border-[#23232A]">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg bg-[#0B0B0C] text-[#0CC6FF] border border-white/[0.08]">
                   {req.id}
                 </span>
                 <span
-                  className={`text-[9px] font-mono px-2 py-0.5 rounded-full uppercase ${
+                  className={`text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase ${
                     req.priority === 'EMERGENCY'
-                      ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                       : req.priority === 'HIGH'
-                      ? 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
-                      : 'bg-[#15151A] text-[#6B6B76] border border-[#23232A]'
+                      ? 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
+                      : 'bg-[#0B0B0C] text-[#8E8E9F] border border-white/[0.08]'
                   }`}
                 >
                   {req.priority}
                 </span>
               </div>
 
-              <h4 className="text-sm font-semibold text-white mt-2.5">{req.title}</h4>
-              <p className="text-xs text-[#D1D1D1] mt-1">{req.description}</p>
+              <h4 className="text-sm font-bold text-white mt-3">{req.title}</h4>
+              <p className="text-xs text-[#E4E4E7] mt-1 leading-relaxed">{req.description}</p>
 
-              <div className="mt-3 space-y-1 text-xs text-[#6B6B76] font-mono bg-[#15151A] p-3 rounded-xl border border-[#23232A]">
+              <div className="mt-3.5 space-y-1.5 text-xs text-[#8E8E9F] font-mono bg-[#0B0B0C] p-3 rounded-xl border border-white/[0.06]">
                 <p className="flex justify-between">
                   <span>Location:</span>
-                  <span className="text-white font-medium">
+                  <span className="text-white font-bold">
                     {req.room_number ? `Room ${req.room_number} (Floor ${req.floor_number})` : 'Common Area'}
                   </span>
                 </p>
                 <p className="flex justify-between">
                   <span>Assigned Tech:</span>
-                  <span className="text-[#4CAF50]">{req.assigned_staff}</span>
+                  <span className="text-[#0CC6FF] font-bold">{req.assigned_staff}</span>
                 </p>
                 <p className="flex justify-between">
                   <span>Estimated Cost:</span>
-                  <span className="text-[#D4AF37] font-semibold">₹{(req.estimated_cost || 0).toLocaleString('en-IN')}</span>
+                  <span className="text-emerald-400 font-bold">₹{(req.estimated_cost || 0).toLocaleString('en-IN')}</span>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-[#1F1F23]">
+            <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
               <span
-                className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full ${
                   req.status === 'COMPLETED'
-                    ? 'bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                     : req.status === 'IN_PROGRESS'
-                    ? 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
-                    : 'bg-[#15151A] text-[#6B6B76] border border-[#23232A]'
+                    ? 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
+                    : 'bg-[#0B0B0C] text-[#8E8E9F] border border-white/[0.08]'
                 }`}
               >
                 {req.status}
@@ -187,7 +190,7 @@ export const Maintenance: React.FC = () => {
                 {req.status === 'PENDING' && (
                   <button
                     onClick={() => updateMaintenanceStatus({ request_id: req.id, status: 'IN_PROGRESS' })}
-                    className="px-3 py-1 bg-[#15151A] text-[#D1D1D1] hover:bg-[#1F1F23] border border-[#23232A] rounded-full text-xs font-medium"
+                    className="px-3 py-1.5 bg-[#0B0B0C] text-[#E4E4E7] hover:text-white border border-white/[0.08] rounded-xl text-xs font-bold transition-colors"
                   >
                     Start Job
                   </button>
@@ -202,7 +205,7 @@ export const Maintenance: React.FC = () => {
                         actual_cost: cost ? Number(cost) : undefined
                       });
                     }}
-                    className="px-3 py-1 bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20 border border-[#4CAF50]/20 rounded-full text-xs font-medium flex items-center space-x-1"
+                    className="px-3.5 py-1.5 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Complete</span>
@@ -216,17 +219,17 @@ export const Maintenance: React.FC = () => {
 
       {/* New Work Order Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-[#0F0F12] border border-[#1F1F23] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-base font-semibold text-white">Create Maintenance Work Order</h3>
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-[#141414] border border-white/[0.08] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-white">Create Maintenance Work Order</h3>
+            <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#6B6B76] mb-1">Room / Asset</label>
+                  <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Room / Asset</label>
                   <select
                     value={roomId}
                     onChange={e => setRoomId(e.target.value)}
-                    className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-[#FF1E9A]"
                   >
                     <option value="">Common Area / Facility</option>
                     {rooms.map(r => (
@@ -238,11 +241,11 @@ export const Maintenance: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[#6B6B76] mb-1">Category</label>
+                  <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Category</label>
                   <select
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-[#FF1E9A]"
                   >
                     <option value="PLUMBING">Plumbing</option>
                     <option value="ELECTRICAL">Electrical & Geyser</option>
@@ -256,11 +259,11 @@ export const Maintenance: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#6B6B76] mb-1">Priority</label>
+                  <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Priority</label>
                   <select
                     value={priority}
                     onChange={e => setPriority(e.target.value as any)}
-                    className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-[#FF1E9A]"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -270,49 +273,49 @@ export const Maintenance: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[#6B6B76] mb-1">Estimated Cost (₹)</label>
+                  <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Estimated Cost (₹)</label>
                   <input
                     type="number"
                     value={estimatedCost}
                     onChange={e => setEstimatedCost(Number(e.target.value))}
-                    className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white font-mono font-bold focus:outline-none focus:border-[#FF1E9A]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#6B6B76] mb-1">Assigned Technician / Staff</label>
+                <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Assigned Technician / Staff</label>
                 <input
                   type="text"
                   value={assignedStaff}
                   onChange={e => setAssignedStaff(e.target.value)}
-                  className="w-full bg-[#15151A] border border-[#23232A] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-white placeholder-[#8E8E9F] focus:outline-none focus:border-[#FF1E9A]"
                 />
               </div>
 
               <div>
-                <label className="block text-[#6B6B76] mb-1">Job Description</label>
+                <label className="block text-[#8E8E9F] font-bold uppercase text-[10px] mb-1">Job Description</label>
                 <textarea
                   rows={3}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="e.g. Geyser tripping breaker on floor 2 bathroom; replace thermostat element"
-                  className="w-full bg-[#15151A] border border-[#23232A] rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl p-3 text-white placeholder-[#8E8E9F] focus:outline-none focus:border-[#FF1E9A]"
                   required
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#1F1F23]">
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-white/[0.08]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 bg-[#15151A] text-[#D1D1D1] rounded-full text-xs font-medium hover:bg-[#1F1F23]"
+                  className="px-4 py-2 bg-[#0B0B0C] text-[#8E8E9F] hover:text-white rounded-xl text-xs font-bold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#D4AF37] text-black rounded-full text-xs font-semibold hover:brightness-110"
+                  className="px-5 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white rounded-xl text-xs font-bold hover:brightness-110 shadow-md transition-all"
                 >
                   Dispatch Work Order
                 </button>

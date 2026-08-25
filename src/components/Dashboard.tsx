@@ -16,7 +16,10 @@ import {
   ArrowDownRight,
   Send,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Activity,
+  ArrowRight
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -52,8 +55,8 @@ export const Dashboard: React.FC = () => {
 
   if (!metrics) {
     return (
-      <div className="flex items-center justify-center h-96 text-gray-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF1E9A]" />
+      <div className="flex items-center justify-center h-96 text-white/50">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FF1E9A]" />
       </div>
     );
   }
@@ -95,20 +98,20 @@ export const Dashboard: React.FC = () => {
     expenseCatMap[e.category] = (expenseCatMap[e.category] || 0) + e.amount;
   });
 
-  const pieColors = ['#D4AF37', '#4CAF50', '#F2E3B5', '#8E8E98', '#6B6B76', '#C0C0C0', '#9E9EA8'];
+  const pieColors = ['#FF1E9A', '#0CC6FF', '#FF6F3C', '#6C4CFF', '#10B981', '#F59E0B', '#8B5CF6'];
   const expensePieData = Object.entries(expenseCatMap).map(([name, value]) => ({
     name: name.charAt(0) + name.slice(1).toLowerCase(),
     value
   }));
 
-  // Attention Required Lists (Computed strictly from live relational state)
+  // Attention Required Lists
   const activeResidents = residents.filter(r => r.status === 'ACTIVE');
   
   // Pending fee residents for Aug 2026
   const pendingResidents = activeResidents.map(r => {
     const payment = payments.find(p => p.resident_id === r.id && p.month === '2026-08');
     const paid = payment ? payment.amount_paid : 0;
-    const balance = Math.max(0, r.monthly_fee - paid);
+    const balance = Math.max(0, (r.monthly_fee || 0) - paid);
     return { resident: r, paid, expected: r.monthly_fee, balance };
   }).filter(item => item.balance > 0);
 
@@ -125,164 +128,167 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Welcome & Summary Header */}
-      <div className="bg-[#0F0F12] p-6 lg:p-8 rounded-2xl border border-[#1F1F23] flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
+      {/* Top Welcome & Summary Hero Header */}
+      <div className="bg-[#141414] p-6 lg:p-8 rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#FF1E9A]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#0CC6FF]/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="z-10">
           <div className="flex items-center space-x-2.5">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#6B6B76]">
-              Synthesis & Diagnostics
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#8E8E9F]">
+              TELEMETRY & OPERATIONS
             </span>
-            <span className="text-xs text-[#D4AF37] font-mono">• August 2026</span>
+            <span className="text-xs text-[#0CC6FF] font-mono">• August 2026</span>
           </div>
-          <h2 className="text-2xl lg:text-3xl font-serif italic text-white mt-1">
+          <h2 className="text-2xl lg:text-3xl font-heading font-extrabold text-white mt-1">
             Executive Overview & Portfolio Status
           </h2>
-          <p className="text-xs text-[#6B6B76] mt-1.5 max-w-xl">
-            Live database telemetry across all 24 suites, {metrics.total_beds} active bed inventories and treasury ledgers.
+          <p className="text-xs text-[#8E8E9F] mt-1.5 max-w-xl">
+            Live database telemetry across all suites, {metrics.total_beds} bed inventories, and treasury ledgers.
           </p>
         </div>
 
         {/* Collection Performance Gauge */}
-        <div className="flex items-center space-x-4 bg-[#15151A] px-5 py-4 rounded-xl border border-[#23232A]">
+        <div className="flex items-center space-x-4 bg-[#0B0B0C] px-5 py-4 rounded-2xl border border-white/[0.08] shadow-inner z-10">
           <div className="text-right">
-            <p className="text-[10px] uppercase tracking-widest text-[#6B6B76] font-bold">Aug Realization Rate</p>
-            <p className="text-2xl font-light text-white font-mono">{metrics.collection_rate}<span className="text-[#D4AF37]">%</span></p>
+            <p className="text-[10px] uppercase tracking-widest text-[#8E8E9F] font-mono font-bold">Aug Realization</p>
+            <p className="text-2xl font-bold text-white font-mono">{metrics.collection_rate}<span className="text-[#FF1E9A]">%</span></p>
           </div>
-          <div className="w-12 h-12 rounded-full border-2 border-[#1F1F23] border-t-[#D4AF37] flex items-center justify-center text-xs font-mono font-bold text-[#D4AF37]">
-            {metrics.collection_rate}%
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#FF1E9A] to-[#6C4CFF] p-[2px] shadow-[0_0_15px_rgba(255,30,154,0.3)]">
+            <div className="w-full h-full bg-[#0B0B0C] rounded-[10px] flex items-center justify-center text-xs font-mono font-bold text-white">
+              {metrics.collection_rate}%
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 10 Executive KPI Cards in Elegant Dark */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {/* 10 Executive KPI Cards in Hanura Media Palette */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Total Beds */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#0CC6FF]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Total Beds</span>
-            <Building2 className="w-3.5 h-3.5 text-[#6B6B76]" />
+            <Building2 className="w-3.5 h-3.5 text-[#0CC6FF] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-light text-white font-mono mb-1">{metrics.total_beds}</div>
-          <div className="text-xs text-[#6B6B76] font-medium">4 Floors Configured</div>
+          <div className="text-2xl sm:text-3xl font-bold text-white font-mono mb-1">{metrics.total_beds}</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">4 Floors Configured</div>
         </div>
 
         {/* Occupied Beds */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-emerald-500/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Occupied</span>
-            <Users className="w-3.5 h-3.5 text-[#4CAF50]" />
+            <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-light text-white font-mono mb-1">{metrics.occupied_beds}</div>
-          <div className="text-xs text-[#4CAF50] font-medium flex items-center gap-1">
-            <span>{metrics.occupancy_rate}% rate</span>
-          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-white font-mono mb-1">{metrics.occupied_beds}</div>
+          <div className="text-[11px] text-emerald-400 font-medium font-mono">{metrics.occupancy_rate}% occupancy</div>
         </div>
 
         {/* Vacant Beds */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#0CC6FF]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Vacant</span>
-            <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <Building2 className="w-3.5 h-3.5 text-[#0CC6FF] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-light text-[#D4AF37] font-mono mb-1">{metrics.vacant_beds}</div>
-          <div className="text-xs text-[#6B6B76] font-medium">Ready for Intake</div>
+          <div className="text-2xl sm:text-3xl font-bold text-[#0CC6FF] font-mono mb-1">{metrics.vacant_beds}</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">Ready for Intake</div>
         </div>
 
         {/* Active Residents */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#6C4CFF]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Active Residents</span>
-            <Users className="w-3.5 h-3.5 text-[#D1D1D1]" />
+            <Users className="w-3.5 h-3.5 text-[#6C4CFF] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-light text-white font-mono mb-1">{metrics.active_residents}</div>
-          <div className="text-xs text-[#6B6B76] font-medium">{metrics.former_residents} Archived</div>
+          <div className="text-2xl sm:text-3xl font-bold text-white font-mono mb-1">{metrics.active_residents}</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">{metrics.former_residents} Archived</div>
         </div>
 
         {/* Occupancy Rate */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#FF1E9A]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Utilization</span>
-            <TrendingUp className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <TrendingUp className="w-3.5 h-3.5 text-[#FF1E9A] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-3xl font-light text-white font-mono mb-1">{metrics.occupancy_rate}<span className="text-[#D4AF37]">%</span></div>
-          <div className="h-1 w-full bg-[#1F1F23] rounded-full mt-2">
-            <div className="h-full bg-[#D4AF37] rounded-full" style={{ width: `${Math.min(100, metrics.occupancy_rate)}%` }} />
+          <div className="text-2xl sm:text-3xl font-bold text-white font-mono mb-1">{metrics.occupancy_rate}<span className="text-[#FF1E9A]">%</span></div>
+          <div className="h-1.5 w-full bg-[#0B0B0C] rounded-full mt-2 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] rounded-full" style={{ width: `${Math.min(100, metrics.occupancy_rate)}%` }} />
           </div>
         </div>
 
         {/* Expected Monthly Collection */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#0CC6FF]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
             <span>Expected Fees</span>
-            <CreditCard className="w-3.5 h-3.5 text-[#6B6B76]" />
+            <CreditCard className="w-3.5 h-3.5 text-[#0CC6FF] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-light text-white font-mono mb-1">
+          <div className="text-xl sm:text-2xl font-bold text-white font-mono mb-1">
             {formatINR(metrics.expected_monthly_collection)}
           </div>
-          <div className="text-xs text-[#6B6B76] font-medium">August Gross</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">August Total</div>
         </div>
 
         {/* Collected This Month */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#4CAF50]/40 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#4CAF50] mb-2 flex items-center justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-emerald-500/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 mb-1.5 flex items-center justify-between">
             <span>Realized (Aug)</span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#4CAF50]" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-light text-white font-mono mb-1">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono mb-1">
             {formatINR(metrics.collected_this_month)}
           </div>
-          <div className="text-xs text-[#4CAF50] font-medium">Direct Bank & Cash</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">UPI, Bank & Cash</div>
         </div>
 
         {/* Pending Amount */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/40 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#D4AF37] mb-2 flex items-center justify-between">
-            <span>Outstanding Dues</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-[#D4AF37]" />
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#FF6F3C]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#FF6F3C] mb-1.5 flex items-center justify-between">
+            <span>Pending Dues</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-[#FF6F3C] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-light text-[#D4AF37] font-mono mb-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#FF6F3C] font-mono mb-1">
             {formatINR(metrics.pending_amount)}
           </div>
-          <div className="text-xs text-[#6B6B76] font-medium">{pendingResidents.length} Residents Pending</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">{pendingResidents.length} Pending</div>
         </div>
 
         {/* Total Expenses */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/30 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] mb-2 flex items-center justify-between">
-            <span>Aug Expenses</span>
-            <Receipt className="w-3.5 h-3.5 text-[#6B6B76]" />
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#6C4CFF]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] mb-1.5 flex items-center justify-between">
+            <span>Aug Outflows</span>
+            <Receipt className="w-3.5 h-3.5 text-[#6C4CFF] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-light text-white font-mono mb-1">
+          <div className="text-xl sm:text-2xl font-bold text-white font-mono mb-1">
             {formatINR(metrics.total_expenses)}
           </div>
-          <div className="text-xs text-[#6B6B76] font-medium">Mess, Utilities, Payroll</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">Mess, Utilities, Staff</div>
         </div>
 
         {/* Net Operating Income */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-5 rounded-2xl hover:border-[#D4AF37]/50 transition-all">
-          <div className="text-[10px] uppercase tracking-widest text-[#D4AF37] mb-2 flex items-center justify-between">
-            <span>Net Surplus</span>
-            <Wallet className="w-3.5 h-3.5 text-[#D4AF37]" />
+        <div className="bg-[#141414] border border-white/[0.08] p-4 sm:p-5 rounded-2xl hover:border-[#FF1E9A]/40 transition-all shadow-lg group">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-[#FF1E9A] mb-1.5 flex items-center justify-between">
+            <span>Net Operating</span>
+            <Wallet className="w-3.5 h-3.5 text-[#FF1E9A] group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-light text-white font-mono mb-1">
+          <div className="text-xl sm:text-2xl font-bold text-white font-mono mb-1">
             {formatINR(metrics.net_operating_amount)}
           </div>
-          <div className="text-xs text-[#D4AF37] font-medium">Net Realized Margin</div>
+          <div className="text-[11px] text-[#FF1E9A] font-medium font-mono">Net Operating Margin</div>
         </div>
       </div>
 
       {/* Visual Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue vs Expenses Trend (2 columns) */}
-        <div className="lg:col-span-2 bg-[#0F0F12] border border-[#1F1F23] p-6 rounded-2xl">
+        <div className="lg:col-span-2 bg-[#141414] border border-white/[0.08] p-6 rounded-2xl shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] font-bold mb-1">Cashflow Trajectory</div>
-              <h3 className="text-base font-semibold text-white">Monthly Revenue vs Operating Outflow</h3>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] font-bold mb-1">CASHFLOW TRAJECTORY</div>
+              <h3 className="text-base font-heading font-bold text-white">Monthly Fee Inflows vs Operating Outflows</h3>
             </div>
             <button
               onClick={() => setActiveTab('reports')}
-              className="text-[10px] text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 rounded-full uppercase tracking-widest hover:bg-[#D4AF37]/10 transition-colors"
+              className="text-[10px] text-[#0CC6FF] border border-[#0CC6FF]/30 px-3.5 py-1.5 rounded-xl uppercase font-mono font-bold hover:bg-[#0CC6FF]/10 transition-colors"
             >
               Detailed P&L
             </button>
@@ -291,34 +297,34 @@ export const Dashboard: React.FC = () => {
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueVsExpenseData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <XAxis dataKey="month" stroke="#6B6B76" fontSize={11} tickLine={false} />
+                <XAxis dataKey="month" stroke="#8E8E9F" fontSize={11} tickLine={false} />
                 <YAxis
-                  stroke="#6B6B76"
+                  stroke="#8E8E9F"
                   fontSize={11}
                   tickLine={false}
                   tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#15151A', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
+                  contentStyle={{ backgroundColor: '#0B0B0C', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
                   formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
                 />
                 <Legend />
-                <Bar dataKey="Revenue" fill="#D4AF37" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Expenses" fill="#6B6B76" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Revenue" fill="#FF1E9A" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Expenses" fill="#6C4CFF" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Expense Category Distribution (1 column) */}
-        <div className="bg-[#0F0F12] border border-[#1F1F23] p-6 rounded-2xl flex flex-col justify-between">
+        <div className="bg-[#141414] border border-white/[0.08] p-6 rounded-2xl shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] font-bold mb-1">Allocation</div>
-                <h3 className="text-base font-semibold text-white">August Expense Distribution</h3>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] font-bold mb-1">ALLOCATION MATRIX</div>
+                <h3 className="text-base font-heading font-bold text-white">August Outflows Breakdown</h3>
               </div>
-              <span className="text-xs font-mono text-[#D4AF37]">{formatINR(metrics.total_expenses)}</span>
+              <span className="text-xs font-mono font-bold text-[#FF6F3C]">{formatINR(metrics.total_expenses)}</span>
             </div>
 
             <div className="h-48 w-full flex items-center justify-center">
@@ -330,7 +336,7 @@ export const Dashboard: React.FC = () => {
                     cy="50%"
                     innerRadius={50}
                     outerRadius={75}
-                    paddingAngle={3}
+                    paddingAngle={4}
                     dataKey="value"
                   >
                     {expensePieData.map((entry, index) => (
@@ -338,7 +344,7 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#15151A', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
+                    contentStyle={{ backgroundColor: '#0B0B0C', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
                     formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
                   />
                 </PieChart>
@@ -347,12 +353,12 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Legend Items */}
-          <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-[#1F1F23]">
+          <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-white/[0.06]">
             {expensePieData.map((entry, index) => (
               <div key={entry.name} className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: pieColors[index % pieColors.length] }} />
-                <span className="text-[#A1A1AA] truncate">{entry.name}:</span>
-                <span className="font-mono text-white font-medium">{formatINR(entry.value)}</span>
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pieColors[index % pieColors.length] }} />
+                <span className="text-[#8E8E9F] truncate">{entry.name}:</span>
+                <span className="font-mono text-white font-bold">{formatINR(entry.value)}</span>
               </div>
             ))}
           </div>
@@ -360,40 +366,40 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* ATTENTION REQUIRED SECTION */}
-      <div className="bg-[#0F0F12] border border-[#1F1F23] rounded-2xl overflow-hidden p-6">
+      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl overflow-hidden p-6 shadow-xl">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[#6B6B76] font-bold mb-1">Operational Diagnostics</div>
-            <h3 className="text-base font-semibold text-white">Priority Action Queue & Triage</h3>
+            <div className="text-[10px] font-mono uppercase tracking-widest text-[#8E8E9F] font-bold mb-1">OPERATIONAL DIAGNOSTICS</div>
+            <h3 className="text-base font-heading font-bold text-white">Priority Action Queue & Triage</h3>
           </div>
-          <span className="text-[10px] font-mono text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 rounded-full uppercase tracking-widest">
+          <span className="text-[10px] font-mono text-[#FF1E9A] border border-[#FF1E9A]/30 px-3 py-1 rounded-full uppercase tracking-widest font-bold">
             {pendingResidents.length + missingKycResidents.length + openComplaints.length + openMaintenance.length} Pending Actions
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Overdue / Pending Fees */}
-          <div className="bg-[#15151A] p-4 rounded-xl border border-[#23232A] flex flex-col justify-between">
+          <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#D4AF37] flex items-center space-x-1.5">
+                <span className="text-xs font-bold text-[#FF1E9A] flex items-center space-x-1.5">
                   <CreditCard className="w-3.5 h-3.5" />
                   <span>Pending Dues ({pendingResidents.length})</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#6B6B76]">Aug 2026</span>
+                <span className="text-[10px] font-mono text-[#8E8E9F]">Aug 2026</span>
               </div>
               <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
                 {pendingResidents.length === 0 ? (
-                  <p className="text-xs text-[#4CAF50] py-3 text-center">All fees reconciled</p>
+                  <p className="text-xs text-emerald-400 py-3 text-center">All fees reconciled</p>
                 ) : (
                   pendingResidents.slice(0, 3).map(({ resident, balance }) => (
-                    <div key={resident.id} className="p-2.5 bg-[#0F0F12] rounded-lg border border-[#1F1F23] flex items-center justify-between text-xs">
+                    <div key={resident.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="truncate pr-2">
-                        <p className="font-medium text-white truncate">{resident.name}</p>
-                        <p className="text-[10px] text-[#6B6B76] font-mono">Rm {resident.current_room_number} • Bed {resident.current_bed_number}</p>
+                        <p className="font-bold text-white truncate">{resident.name}</p>
+                        <p className="text-[10px] text-[#8E8E9F] font-mono">Rm {resident.current_room_number} • Bed {resident.current_bed_number}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-mono font-bold text-[#D4AF37]">₹{(balance || 0).toLocaleString('en-IN')}</p>
+                        <p className="font-mono font-bold text-[#FF6F3C]">₹{(balance || 0).toLocaleString('en-IN')}</p>
                         <div className="flex items-center justify-end space-x-1.5 mt-0.5">
                           <button
                             onClick={() => {
@@ -406,16 +412,16 @@ export const Dashboard: React.FC = () => {
                               });
                             }}
                             title={`Remind ${resident.name} on WhatsApp`}
-                            className="p-1 rounded bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/25 border border-[#25D366]/30 transition-colors"
+                            className="p-1 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/25 border border-[#25D366]/30 transition-colors"
                           >
-                            <Send className="w-2.5 h-2.5" />
+                            <Send className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => {
                               setPreselectedResidentForPayment(resident);
                               setRecordPaymentModalOpen(true);
                             }}
-                            className="text-[10px] text-[#D1D1D1] hover:text-[#D4AF37] hover:underline"
+                            className="text-[10px] text-[#0CC6FF] font-bold hover:underline"
                           >
                             Collect →
                           </button>
@@ -428,7 +434,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setActiveTab('payments')}
-              className="mt-3 pt-2 border-t border-[#1F1F23] text-xs text-[#D4AF37] hover:text-white flex items-center justify-between w-full font-medium"
+              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#FF1E9A] hover:text-white flex items-center justify-between w-full font-bold"
             >
               <span>View All Dues</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -436,33 +442,33 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Missing / Pending KYC */}
-          <div className="bg-[#15151A] p-4 rounded-xl border border-[#23232A] flex flex-col justify-between">
+          <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#D1D1D1] flex items-center space-x-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span className="text-xs font-bold text-[#0CC6FF] flex items-center space-x-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-[#0CC6FF]" />
                   <span>Pending KYC ({missingKycResidents.length})</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#6B6B76]">Audit</span>
+                <span className="text-[10px] font-mono text-[#8E8E9F]">Audit</span>
               </div>
               <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
                 {missingKycResidents.length === 0 ? (
-                  <p className="text-xs text-[#4CAF50] py-3 text-center">100% KYC Verified</p>
+                  <p className="text-xs text-emerald-400 py-3 text-center">100% KYC Verified</p>
                 ) : (
                   missingKycResidents.slice(0, 3).map(res => (
-                    <div key={res.id} className="p-2.5 bg-[#0F0F12] rounded-lg border border-[#1F1F23] flex items-center justify-between text-xs">
+                    <div key={res.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="truncate pr-2">
-                        <p className="font-medium text-white truncate">{res.name}</p>
-                        <p className="text-[10px] text-[#D4AF37] font-mono">{res.kyc_status}</p>
+                        <p className="font-bold text-white truncate">{res.name}</p>
+                        <p className="text-[10px] text-[#FF6F3C] font-mono font-bold">{res.kyc_status}</p>
                       </div>
                       <button
                         onClick={() => {
                           setSelectedResidentId(res.id);
                           setActiveTab('residents');
                         }}
-                        className="px-2.5 py-1 bg-[#1F1F23] hover:bg-[#D4AF37]/20 hover:text-[#D4AF37] text-white rounded text-[10px] font-medium transition-colors"
+                        className="px-2.5 py-1 bg-[#0CC6FF]/15 hover:bg-[#0CC6FF]/25 text-[#0CC6FF] rounded-lg text-[10px] font-bold transition-colors border border-[#0CC6FF]/30"
                       >
-                        Verify
+                        Inspect
                       </button>
                     </div>
                   ))
@@ -471,7 +477,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setActiveTab('kyc')}
-              className="mt-3 pt-2 border-t border-[#1F1F23] text-xs text-[#D1D1D1] hover:text-[#D4AF37] flex items-center justify-between w-full font-medium"
+              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#0CC6FF] hover:text-white flex items-center justify-between w-full font-bold"
             >
               <span>Open KYC Center</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -479,26 +485,26 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Unresolved Complaints */}
-          <div className="bg-[#15151A] p-4 rounded-xl border border-[#23232A] flex flex-col justify-between">
+          <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white flex items-center space-x-1.5">
-                  <MessageSquareWarning className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span className="text-xs font-bold text-[#FF6F3C] flex items-center space-x-1.5">
+                  <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF6F3C]" />
                   <span>Open Complaints ({openComplaints.length})</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#6B6B76]">SLA</span>
+                <span className="text-[10px] font-mono text-[#8E8E9F]">SLA</span>
               </div>
               <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
                 {openComplaints.length === 0 ? (
-                  <p className="text-xs text-[#4CAF50] py-3 text-center">Zero grievances active</p>
+                  <p className="text-xs text-emerald-400 py-3 text-center">Zero grievances active</p>
                 ) : (
                   openComplaints.slice(0, 3).map(cmp => (
-                    <div key={cmp.id} className="p-2.5 bg-[#0F0F12] rounded-lg border border-[#1F1F23] flex items-center justify-between text-xs">
+                    <div key={cmp.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="truncate pr-2">
-                        <p className="font-medium text-white truncate">{cmp.category} - Rm {cmp.room_number}</p>
-                        <p className="text-[10px] text-[#6B6B76] truncate">{cmp.description}</p>
+                        <p className="font-bold text-white truncate">{cmp.category} - Rm {cmp.room_number}</p>
+                        <p className="text-[10px] text-[#8E8E9F] truncate">{cmp.description}</p>
                       </div>
-                      <span className="text-[9px] font-mono font-semibold px-2 py-0.5 rounded bg-[#1F1F23] text-[#D4AF37] uppercase">
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#FF6F3C]/15 text-[#FF6F3C] uppercase border border-[#FF6F3C]/30">
                         {cmp.priority}
                       </span>
                     </div>
@@ -508,7 +514,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setActiveTab('complaints')}
-              className="mt-3 pt-2 border-t border-[#1F1F23] text-xs text-[#D1D1D1] hover:text-[#D4AF37] flex items-center justify-between w-full font-medium"
+              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#FF6F3C] hover:text-white flex items-center justify-between w-full font-bold"
             >
               <span>Manage Complaints</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -516,26 +522,26 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Pending Maintenance */}
-          <div className="bg-[#15151A] p-4 rounded-xl border border-[#23232A] flex flex-col justify-between">
+          <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#D1D1D1] flex items-center space-x-1.5">
-                  <Wrench className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span className="text-xs font-bold text-[#6C4CFF] flex items-center space-x-1.5">
+                  <Wrench className="w-3.5 h-3.5 text-[#6C4CFF]" />
                   <span>Work Orders ({openMaintenance.length})</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#6B6B76]">Repairs</span>
+                <span className="text-[10px] font-mono text-[#8E8E9F]">Repairs</span>
               </div>
               <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
                 {openMaintenance.length === 0 ? (
-                  <p className="text-xs text-[#4CAF50] py-3 text-center">All assets optimal</p>
+                  <p className="text-xs text-emerald-400 py-3 text-center">All assets optimal</p>
                 ) : (
                   openMaintenance.slice(0, 3).map(mnt => (
-                    <div key={mnt.id} className="p-2.5 bg-[#0F0F12] rounded-lg border border-[#1F1F23] flex items-center justify-between text-xs">
+                    <div key={mnt.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="truncate pr-2">
-                        <p className="font-medium text-white truncate">{mnt.category} (Rm {mnt.room_number})</p>
-                        <p className="text-[10px] text-[#6B6B76] font-mono">Assigned: {mnt.assigned_staff}</p>
+                        <p className="font-bold text-white truncate">{mnt.category} (Rm {mnt.room_number})</p>
+                        <p className="text-[10px] text-[#8E8E9F] font-mono">Assigned: {mnt.assigned_staff}</p>
                       </div>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#1F1F23] text-[#A1A1AA] uppercase">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#6C4CFF]/15 text-[#6C4CFF] uppercase border border-[#6C4CFF]/30 font-bold">
                         {mnt.status}
                       </span>
                     </div>
@@ -545,7 +551,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setActiveTab('maintenance')}
-              className="mt-3 pt-2 border-t border-[#1F1F23] text-xs text-[#D1D1D1] hover:text-[#D4AF37] flex items-center justify-between w-full font-medium"
+              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#6C4CFF] hover:text-white flex items-center justify-between w-full font-bold"
             >
               <span>Work Order Log</span>
               <ChevronRight className="w-3.5 h-3.5" />

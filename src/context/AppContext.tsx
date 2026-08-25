@@ -90,8 +90,32 @@ interface AppContextType {
   setSearchModalOpen: (open: boolean) => void;
 
   // Quick Action Modals
+  addRoomModalOpen: boolean;
+  setAddRoomModalOpen: (open: boolean) => void;
   addResidentModalOpen: boolean;
   setAddResidentModalOpen: (open: boolean) => void;
+  editResidentModalOpen: boolean;
+  setEditResidentModalOpen: (open: boolean) => void;
+  editingResident: Resident | null;
+  setEditingResident: (r: Resident | null) => void;
+  transferModalOpen: boolean;
+  setTransferModalOpen: (open: boolean) => void;
+  transferringResident: Resident | null;
+  setTransferringResident: (r: Resident | null) => void;
+  vacateModalOpen: boolean;
+  setVacateModalOpen: (open: boolean) => void;
+  vacatingResident: Resident | null;
+  setVacatingResident: (r: Resident | null) => void;
+  uploadKYCModalOpen: boolean;
+  setUploadKYCModalOpen: (open: boolean) => void;
+  uploadKYCResident: Resident | null;
+  setUploadKYCResident: (r: Resident | null) => void;
+
+  openEditResidentModal: (r: Resident) => void;
+  openTransferResidentModal: (r: Resident) => void;
+  openVacateResidentModal: (r: Resident) => void;
+  openUploadKYCModal: (r?: Resident) => void;
+
   recordPaymentModalOpen: boolean;
   setRecordPaymentModalOpen: (open: boolean) => void;
   preselectedResidentForPayment: Resident | null;
@@ -132,10 +156,38 @@ interface AppContextType {
   updateComplaint: (id: string, payload: Partial<Complaint>) => Promise<Complaint>;
   createMaintenance: (payload: Partial<MaintenanceRequest>) => Promise<MaintenanceRequest>;
   updateMaintenance: (id: string, payload: Partial<MaintenanceRequest>) => Promise<MaintenanceRequest>;
+  createFloor: (payload: { floor_number: number; name?: string; description?: string }) => Promise<Floor>;
+  deleteFloor: (floorId: string) => Promise<void>;
+  createRoom: (payload: {
+    floor_number: number;
+    room_number: string;
+    capacity: number;
+    monthly_fee: number;
+    sharing_type?: string;
+    amenities?: string[];
+  }) => Promise<Room>;
+  bulkCreateRooms: (payload: {
+    floor_number: number;
+    room_numbers?: string[];
+    prefix?: string;
+    start_number?: number;
+    end_number?: number;
+    capacity: number;
+    monthly_fee: number;
+    sharing_type?: string;
+    amenities?: string[];
+  }) => Promise<Room[]>;
+  updateRoom: (id: string, payload: Partial<Room>) => Promise<Room>;
+  deleteRoom: (id: string) => Promise<void>;
+  addBedToRoom: (roomId: string, price?: number) => Promise<Bed>;
+  decreaseBedInRoom: (roomId: string) => Promise<Bed>;
+  deleteBed: (bedId: string) => Promise<void>;
+
   addStaff: (payload: Partial<Staff>) => Promise<Staff>;
   recordSalary: (payload: any) => Promise<SalaryPayment>;
   updateSettings: (payload: Partial<SystemSettings>) => Promise<SystemSettings>;
   resetDemoDatabase: () => Promise<void>;
+  clearAllData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -172,7 +224,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Modal states
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [addRoomModalOpen, setAddRoomModalOpen] = useState(false);
   const [addResidentModalOpen, setAddResidentModalOpen] = useState(false);
+  const [editResidentModalOpen, setEditResidentModalOpen] = useState(false);
+  const [editingResident, setEditingResident] = useState<Resident | null>(null);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferringResident, setTransferringResident] = useState<Resident | null>(null);
+  const [vacateModalOpen, setVacateModalOpen] = useState(false);
+  const [vacatingResident, setVacatingResident] = useState<Resident | null>(null);
+  const [uploadKYCModalOpen, setUploadKYCModalOpen] = useState(false);
+  const [uploadKYCResident, setUploadKYCResident] = useState<Resident | null>(null);
+
+  const openEditResidentModal = useCallback((r: Resident) => {
+    setEditingResident(r);
+    setEditResidentModalOpen(true);
+  }, []);
+
+  const openTransferResidentModal = useCallback((r: Resident) => {
+    setTransferringResident(r);
+    setTransferModalOpen(true);
+  }, []);
+
+  const openVacateResidentModal = useCallback((r: Resident) => {
+    setVacatingResident(r);
+    setVacateModalOpen(true);
+  }, []);
+
+  const openUploadKYCModal = useCallback((r?: Resident) => {
+    if (r) setUploadKYCResident(r);
+    setUploadKYCModalOpen(true);
+  }, []);
+
   const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
   const [preselectedResidentForPayment, setPreselectedResidentForPayment] = useState<Resident | null>(null);
   const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false);
@@ -510,6 +592,129 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // ACTION: Floors & Rooms Management
+  const createFloor = async (payload: { floor_number: number; name?: string; description?: string }) => {
+    try {
+      const res = await api.createFloor(payload);
+      await refreshData();
+      addToast('success', 'Floor Created', `Floor ${res.data.floor_number} (${res.data.name}) added.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Failed to Create Floor', err.message);
+      throw err;
+    }
+  };
+
+  const deleteFloor = async (floorId: string) => {
+    try {
+      await api.deleteFloor(floorId);
+      await refreshData();
+      addToast('info', 'Floor Deleted', 'Floor and associated vacant rooms removed.');
+    } catch (err: any) {
+      addToast('error', 'Failed to Delete Floor', err.message);
+      throw err;
+    }
+  };
+
+  const createRoom = async (payload: {
+    floor_number: number;
+    room_number: string;
+    capacity: number;
+    monthly_fee: number;
+    sharing_type?: string;
+    amenities?: string[];
+  }) => {
+    try {
+      const res = await api.createRoom(payload);
+      await refreshData();
+      addToast('success', 'Room Created', `Suite ${res.data.room_number} (${res.data.capacity} beds) added to Floor ${res.data.floor_number}.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Failed to Create Room', err.message);
+      throw err;
+    }
+  };
+
+  const bulkCreateRooms = async (payload: {
+    floor_number: number;
+    room_numbers?: string[];
+    prefix?: string;
+    start_number?: number;
+    end_number?: number;
+    capacity: number;
+    monthly_fee: number;
+    sharing_type?: string;
+    amenities?: string[];
+  }) => {
+    try {
+      const res = await api.bulkCreateRooms(payload);
+      await refreshData();
+      addToast('success', 'Bulk Rooms Created', `Successfully provisioned ${res.data.length} suites on Floor ${payload.floor_number}.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Bulk Creation Failed', err.message);
+      throw err;
+    }
+  };
+
+  const updateRoom = async (id: string, payload: Partial<Room>) => {
+    try {
+      const res = await api.updateRoom(id, payload);
+      await refreshData();
+      addToast('success', 'Room Updated', `Suite ${res.data.room_number} configuration updated.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Failed to Update Room', err.message);
+      throw err;
+    }
+  };
+
+  const deleteRoom = async (id: string) => {
+    try {
+      await api.deleteRoom(id);
+      await refreshData();
+      addToast('info', 'Room Deleted', 'Suite removed from property inventory.');
+    } catch (err: any) {
+      addToast('error', 'Failed to Delete Room', err.message);
+      throw err;
+    }
+  };
+
+  const addBedToRoom = async (roomId: string, price?: number) => {
+    try {
+      const res = await api.addBedToRoom(roomId, price);
+      await refreshData();
+      addToast('success', 'Bed Added', `Bed ${res.data.bed_number} added to Suite.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Failed to Add Bed', err.message);
+      throw err;
+    }
+  };
+
+  const decreaseBedInRoom = async (roomId: string) => {
+    try {
+      const res = await api.decreaseBedInRoom(roomId);
+      await refreshData();
+      addToast('info', 'Bed Removed', `Bed ${res.data.bed_number} removed from Suite.`);
+      return res.data;
+    } catch (err: any) {
+      addToast('error', 'Failed to Remove Bed', err.message);
+      throw err;
+    }
+  };
+
+  const deleteBed = async (bedId: string) => {
+    try {
+      await api.deleteBed(bedId);
+      await refreshData();
+      addToast('info', 'Bed Removed', 'Vacant bed removed from room.');
+    } catch (err: any) {
+      addToast('error', 'Failed to Remove Bed', err.message);
+      throw err;
+    }
+  };
+
   // ACTION: Staff & Salary
   const addStaff = async (payload: any) => {
     try {
@@ -560,6 +765,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // ACTION: Clear All Records / Clean Slate
+  const clearAllData = async () => {
+    try {
+      const data = await api.clearAllData();
+      applySnapshot(data);
+      addToast('success', 'Database Cleared', 'All demo data removed. You have a clean, fresh production state.');
+    } catch (err: any) {
+      addToast('error', 'Clear Failed', err.message);
+      throw err;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -593,8 +810,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setPrintReceiptPayment,
         searchModalOpen,
         setSearchModalOpen,
+        addRoomModalOpen,
+        setAddRoomModalOpen,
         addResidentModalOpen,
         setAddResidentModalOpen,
+        editResidentModalOpen,
+        setEditResidentModalOpen,
+        editingResident,
+        setEditingResident,
+        transferModalOpen,
+        setTransferModalOpen,
+        transferringResident,
+        setTransferringResident,
+        vacateModalOpen,
+        setVacateModalOpen,
+        vacatingResident,
+        setVacatingResident,
+        uploadKYCModalOpen,
+        setUploadKYCModalOpen,
+        uploadKYCResident,
+        setUploadKYCResident,
+        openEditResidentModal,
+        openTransferResidentModal,
+        openVacateResidentModal,
+        openUploadKYCModal,
         recordPaymentModalOpen,
         setRecordPaymentModalOpen,
         preselectedResidentForPayment,
@@ -620,10 +859,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateComplaint,
         createMaintenance,
         updateMaintenance,
+        createFloor,
+        deleteFloor,
+        createRoom,
+        bulkCreateRooms,
+        updateRoom,
+        deleteRoom,
+        addBedToRoom,
+        decreaseBedInRoom,
+        deleteBed,
         addStaff,
         recordSalary,
         updateSettings,
-        resetDemoDatabase
+        resetDemoDatabase,
+        clearAllData
       }}
     >
       {children}
