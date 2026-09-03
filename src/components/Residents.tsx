@@ -25,7 +25,8 @@ import {
   Sparkles,
   Zap,
   ChevronRight,
-  UserPlus
+  UserPlus,
+  Trash2
 } from 'lucide-react';
 
 interface ResidentsProps {
@@ -57,6 +58,7 @@ export const Residents: React.FC<ResidentsProps> = ({
     setPreselectedResidentForPayment,
     sendWhatsApp,
     sendDirectWhatsApp,
+    deleteResident,
     addToast
   } = useApp();
 
@@ -600,6 +602,19 @@ export const Residents: React.FC<ResidentsProps> = ({
                               </button>
                             </>
                           )}
+
+                          {/* Delete Resident Permanently */}
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Permanently delete ${r.name}? This will free their bed and remove the resident record.`)) {
+                                await deleteResident(r.id);
+                              }
+                            }}
+                            title="Delete Resident"
+                            className="p-1.5 text-[#8E8E9F] hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

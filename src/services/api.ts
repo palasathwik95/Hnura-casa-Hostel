@@ -96,6 +96,19 @@ export const api = {
     return await res.json();
   },
 
+  async deleteResident(residentId: string, adminUser?: string) {
+    const res = await fetch(`/api/residents/${residentId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_user: adminUser })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete resident');
+    }
+    return await res.json();
+  },
+
   async recordPayment(payload: any): Promise<{ data: Payment; metrics: DashboardMetrics }> {
     const res = await fetch('/api/payments', {
       method: 'POST',
@@ -423,6 +436,13 @@ export const api = {
   async clearAllData(): Promise<BootstrapResponse> {
     const res = await fetch('/api/system/clear-all', { method: 'POST' });
     if (!res.ok) throw new Error('Failed to clear database');
+    const json = await res.json();
+    return json.data;
+  },
+
+  async removeSampleData(): Promise<BootstrapResponse> {
+    const res = await fetch('/api/system/remove-sample', { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to remove sample data');
     const json = await res.json();
     return json.data;
   }

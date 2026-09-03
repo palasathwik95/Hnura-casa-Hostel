@@ -105,18 +105,30 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
 
   const filteredRooms = rooms.filter(r => r.floor_number === selectedFloor);
 
+  const getRoomOccupiedCount = (room: Room) => {
+    return (room.beds || []).filter(b => 
+      residents.some(r => r.status === 'ACTIVE' && (
+        r.current_bed_id === b.id ||
+        (r.current_room_id === room.id && (r.current_bed_id === b.id || r.current_bed_number === b.bed_number)) ||
+        (r.current_room_number === room.room_number && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
+      ))
+    ).length;
+  };
+
   const getRoomBadgeColor = (room: Room) => {
+    const occ = getRoomOccupiedCount(room);
     if (room.status === 'MAINTENANCE') return 'bg-rose-500/15 text-rose-400 border-rose-500/30';
-    if (room.occupied_beds_count === room.capacity) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    if (room.occupied_beds_count > 0) return 'bg-[#0CC6FF]/15 text-[#0CC6FF] border-[#0CC6FF]/30';
+    if (occ === room.capacity && room.capacity > 0) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+    if (occ > 0) return 'bg-[#0CC6FF]/15 text-[#0CC6FF] border-[#0CC6FF]/30';
     return 'bg-[#141414] text-[#8E8E9F] border-white/[0.08]';
   };
 
   const getRoomCardBorder = (room: Room, isSelected: boolean) => {
+    const occ = getRoomOccupiedCount(room);
     if (isSelected) return 'border-[#FF1E9A] ring-1 ring-[#FF1E9A]/40 shadow-[0_0_20px_rgba(255,30,154,0.25)]';
     if (room.status === 'MAINTENANCE') return 'border-rose-500/30';
-    if (room.occupied_beds_count === room.capacity) return 'border-emerald-500/30';
-    if (room.occupied_beds_count > 0) return 'border-[#0CC6FF]/30';
+    if (occ === room.capacity && room.capacity > 0) return 'border-emerald-500/30';
+    if (occ > 0) return 'border-[#0CC6FF]/30';
     return 'border-white/[0.08]';
   };
 
@@ -228,6 +240,7 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
                 const isSelected = selectedRoom?.id === room.id;
                 const badgeClass = getRoomBadgeColor(room);
                 const borderClass = getRoomCardBorder(room, isSelected);
+                const activeOcc = getRoomOccupiedCount(room);
 
                 return (
                   <div
@@ -241,7 +254,7 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
                           {room.room_number}
                         </span>
                         <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${badgeClass}`}>
-                          {room.occupied_beds_count}/{room.capacity}
+                          {activeOcc}/{room.capacity}
                         </span>
                       </div>
                       <p className="text-[11px] text-[#8E8E9F] mt-1">{room.sharing_type}</p>
@@ -252,17 +265,26 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
 
                     {/* Bed Dots */}
                     <div className="flex items-center space-x-1.5 mt-3 pt-2.5 border-t border-white/[0.06]">
-                      {room.beds.map((b, idx) => (
-                        <span
-                          key={b.id || idx}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            b.status === 'OCCUPIED'
-                              ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
-                              : 'bg-white/10'
-                          }`}
-                          title={`Bed ${b.bed_number}: ${b.status} ${b.current_resident_name ? `(${b.current_resident_name})` : ''}`}
-                        />
-                      ))}
+                      {room.beds.map((b, idx) => {
+                        const hasResident = residents.some(r => 
+                          r.status === 'ACTIVE' && (
+                            r.current_bed_id === b.id ||
+                            (r.current_room_id === room.id && (r.current_bed_id === b.id || r.current_bed_number === b.bed_number)) ||
+                            (r.current_room_number === room.room_number && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
+                          )
+                        );
+                        return (
+                          <span
+                            key={b.id || idx}
+                            className={`w-2.5 h-2.5 rounded-full transition-all ${
+                              hasResident
+                                ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
+                                : 'bg-white/10'
+                            }`}
+                            title={`Bed ${b.bed_number}: ${hasResident ? 'OCCUPIED' : 'VACANT'}`}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -284,15 +306,20 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
                       <span className="px-3 py-1 bg-[#0B0B0C] text-[#E4E4E7] rounded-xl text-xs font-mono border border-white/[0.08]">
                         {selectedRoom.floor_number === 0 ? 'Ground Floor' : `Floor ${selectedRoom.floor_number}`} • {selectedRoom.sharing_type}
                       </span>
-                      <span
-                        className={`px-3 py-1 rounded-xl text-xs font-mono font-bold uppercase ${getRoomBadgeColor(
-                          selectedRoom
-                        )}`}
-                      >
-                        {selectedRoom.occupied_beds_count === selectedRoom.capacity
-                          ? 'Fully Occupied'
-                          : `${selectedRoom.vacant_beds_count} Bed(s) Available`}
-                      </span>
+                      {(() => {
+                        const selectedRoomOcc = getRoomOccupiedCount(selectedRoom);
+                        return (
+                          <span
+                            className={`px-3 py-1 rounded-xl text-xs font-mono font-bold uppercase ${getRoomBadgeColor(
+                              selectedRoom
+                            )}`}
+                          >
+                            {selectedRoomOcc === selectedRoom.capacity && selectedRoom.capacity > 0
+                              ? 'Fully Occupied'
+                              : `${selectedRoom.capacity - selectedRoomOcc} Bed(s) Available`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-xs text-[#8E8E9F] mt-1.5">
                       Monthly Tariff: <span className="text-[#0CC6FF] font-mono font-bold">₹{(selectedRoom.monthly_fee || 0).toLocaleString('en-IN')}</span> per resident
@@ -315,9 +342,9 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
                           (r.current_room_number === selectedRoom.room_number && (r.current_bed_number === bed.bed_number || r.current_bed_id === bed.id))
                         )
                       );
-                      const isOccupied = bed.status === 'OCCUPIED' || !!residentForBed;
-                      const occupantName = residentForBed ? residentForBed.name : bed.current_resident_name || 'Resident';
-                      const occupantId = residentForBed ? residentForBed.id : bed.current_resident_id;
+                      const isOccupied = !!residentForBed;
+                      const occupantName = residentForBed ? residentForBed.name : 'Resident';
+                      const occupantId = residentForBed ? residentForBed.id : null;
 
                       return (
                         <div

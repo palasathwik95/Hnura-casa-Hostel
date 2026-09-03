@@ -94,6 +94,17 @@ async function startServer() {
     }
   });
 
+  // Delete Resident permanently
+  app.delete('/api/residents/:id', (req, res) => {
+    try {
+      const result = db.deleteResident(req.params.id, req.body?.admin_user);
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: result, metrics });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
   // Payments
   app.post('/api/payments', (req, res) => {
     try {
@@ -352,6 +363,18 @@ async function startServer() {
   app.post('/api/system/clear-all', (req, res) => {
     try {
       db.clearAllData();
+      const snapshot = db.getSnapshot();
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: true, data: { ...snapshot, metrics } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Remove Sample Data (Residents, Payments, Transactions) but keep configured rooms & floors
+  app.post('/api/system/remove-sample', (req, res) => {
+    try {
+      db.removeSampleData();
       const snapshot = db.getSnapshot();
       const metrics = db.getDashboardMetrics();
       res.json({ success: true, data: { ...snapshot, metrics } });

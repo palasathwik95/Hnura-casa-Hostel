@@ -15,7 +15,8 @@ import {
   BedDouble,
   Search,
   Check,
-  Edit2
+  Edit2,
+  UserX
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -24,6 +25,7 @@ export const SettingsView: React.FC = () => {
     floors,
     rooms,
     beds,
+    residents,
     updateSettings,
     createFloor,
     deleteFloor,
@@ -35,6 +37,7 @@ export const SettingsView: React.FC = () => {
     decreaseBedInRoom,
     resetDemoDatabase,
     clearAllData,
+    removeSampleData,
     addToast
   } = useApp();
 
@@ -289,7 +292,23 @@ export const SettingsView: React.FC = () => {
             onClick={() => {
               if (
                 confirm(
-                  'Are you sure you want to CLEAR ALL DATA?\n\nThis will remove all demo/dummy rooms, beds, residents, and payments so you can build your custom hostel structure from scratch.'
+                  'Remove all sample residents, payments, and test data?\n\nThis leaves your configured floors and rooms intact, with all beds reset to vacant and ready for real residents.'
+                )
+              ) {
+                removeSampleData();
+              }
+            }}
+            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#FF6F3C]/10 text-[#FF6F3C] hover:bg-[#FF6F3C]/20 border border-[#FF6F3C]/30 text-xs font-bold transition-all shadow-sm"
+          >
+            <UserX className="w-3.5 h-3.5" />
+            <span>Remove Sample Data</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (
+                confirm(
+                  'Are you sure you want to CLEAR ALL DATA?\n\nThis will remove all rooms, beds, floors, residents, and payments so you can build your custom hostel structure from scratch.'
                 )
               ) {
                 clearAllData();
@@ -778,7 +797,17 @@ export const SettingsView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {floors.map(fl => {
                   const floorRooms = rooms.filter(r => r.floor_id === fl.id || r.floor_number === fl.floor_number);
-                  const floorOccupied = floorRooms.reduce((sum, r) => sum + r.occupied_beds_count, 0);
+                  const floorOccupied = floorRooms.reduce((sum, r) => {
+                    return sum + (r.beds || []).filter(b => 
+                      residents.some(res => 
+                        res.status === 'ACTIVE' && (
+                          res.current_bed_id === b.id ||
+                          (res.current_room_id === r.id && (res.current_bed_id === b.id || res.current_bed_number === b.bed_number)) ||
+                          (res.current_room_number === r.room_number && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id))
+                        )
+                      )
+                    ).length;
+                  }, 0);
                   const floorTotalBeds = floorRooms.reduce((sum, r) => sum + r.capacity, 0);
 
                   return (
@@ -849,7 +878,7 @@ export const SettingsView: React.FC = () => {
                   Showing <strong className="text-white">{filteredConfiguredRooms.length}</strong> of {rooms.length} Suites
                 </span>
                 <span className="text-emerald-400 font-mono font-bold">
-                  {beds.filter(b => b.status === 'OCCUPIED').length}/{beds.length} Total Beds Occupied
+                  {residents.filter(res => res.status === 'ACTIVE').length}/{beds.length} Total Beds Occupied
                 </span>
               </div>
             </div>
@@ -891,7 +920,16 @@ export const SettingsView: React.FC = () => {
                       {filteredConfiguredRooms.map(r => {
                         const isEditing = editingRoomId === r.id;
                         const isBusy = actionLoadingRoomId === r.id;
-                        const vacantCount = r.beds.filter(b => b.status === 'VACANT').length;
+                        const roomOccupiedCount = (r.beds || []).filter(b => 
+                          residents.some(res => 
+                            res.status === 'ACTIVE' && (
+                              res.current_bed_id === b.id ||
+                              (res.current_room_id === r.id && (res.current_bed_id === b.id || res.current_bed_number === b.bed_number)) ||
+                              (res.current_room_number === r.room_number && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id))
+                            )
+                          )
+                        ).length;
+                        const vacantCount = Math.max(0, r.capacity - roomOccupiedCount);
 
                         return (
                           <tr key={r.id} className="hover:bg-white/[0.02] transition-colors">
@@ -940,33 +978,42 @@ export const SettingsView: React.FC = () => {
 
                               {/* Bed Slot Visual Badges */}
                               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                {r.beds.map((b, idx) => (
-                                  <span
-                                    key={b.id || idx}
-                                    title={`Bed ${b.bed_number}: ${b.status} ${b.current_resident_name ? `(${b.current_resident_name})` : ''}`}
-                                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex items-center space-x-1 ${
-                                      b.status === 'OCCUPIED'
-                                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                                        : 'bg-white/[0.04] text-[#8E8E9F] border border-white/[0.08]'
-                                    }`}
-                                  >
-                                    <span>B{b.bed_number}</span>
-                                    {b.status === 'OCCUPIED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />}
-                                  </span>
-                                ))}
+                                {r.beds.map((b, idx) => {
+                                  const hasResident = residents.some(res => 
+                                    res.status === 'ACTIVE' && (
+                                      res.current_bed_id === b.id ||
+                                      (res.current_room_id === r.id && (res.current_bed_id === b.id || res.current_bed_number === b.bed_number)) ||
+                                      (res.current_room_number === r.room_number && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id))
+                                    )
+                                  );
+                                  return (
+                                    <span
+                                      key={b.id || idx}
+                                      title={`Bed ${b.bed_number}: ${hasResident ? 'OCCUPIED' : 'VACANT'}`}
+                                      className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex items-center space-x-1 ${
+                                        hasResident
+                                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                          : 'bg-white/[0.04] text-[#8E8E9F] border border-white/[0.08]'
+                                      }`}
+                                    >
+                                      <span>B{b.bed_number}</span>
+                                      {hasResident && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </td>
                             <td className="py-3.5 px-3">
                               <span
                                 className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border ${
-                                  r.occupied_beds_count === r.capacity && r.capacity > 0
+                                  roomOccupiedCount === r.capacity && r.capacity > 0
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : r.occupied_beds_count > 0
+                                    : roomOccupiedCount > 0
                                     ? 'bg-[#0CC6FF]/10 text-[#0CC6FF] border-[#0CC6FF]/30'
                                     : 'bg-white/[0.04] text-[#8E8E9F] border-white/[0.08]'
                                 }`}
                               >
-                                {r.occupied_beds_count}/{r.capacity} Occupied
+                                {roomOccupiedCount}/{r.capacity} Occupied
                               </span>
                             </td>
                             <td className="py-3.5 px-3 font-mono font-bold text-[#0CC6FF]">
@@ -1031,12 +1078,12 @@ export const SettingsView: React.FC = () => {
                                       deleteRoom(r.id);
                                     }
                                   }}
-                                  disabled={r.occupied_beds_count > 0}
+                                  disabled={roomOccupiedCount > 0}
                                   className={`p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-colors ${
-                                    r.occupied_beds_count > 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                    roomOccupiedCount > 0 ? 'opacity-30 cursor-not-allowed' : ''
                                   }`}
                                   title={
-                                    r.occupied_beds_count > 0
+                                    roomOccupiedCount > 0
                                       ? 'Cannot delete room with active residents'
                                       : 'Delete Room'
                                   }

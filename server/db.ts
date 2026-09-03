@@ -108,6 +108,7 @@ class DatabaseService {
           });
         }
 
+        this.sanitizeAndSyncOccupancy();
         this.saveToDisk();
         console.log('✅ Hanura Casa database loaded from persistent disk storage with verified unique keys.');
         return;
@@ -117,6 +118,7 @@ class DatabaseService {
     }
 
     this.seedInitialDatabase();
+    this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     console.log('✅ Hanura Casa database initialized with clean production data.');
   }
@@ -588,8 +590,13 @@ class DatabaseService {
     const formerResidents = this.data.residents.filter(r => r.status === 'VACATED');
     
     const totalBeds = this.data.beds.length;
-    const occupiedBeds = this.data.beds.filter(b => b.status === 'OCCUPIED').length;
-    const vacantBeds = totalBeds - occupiedBeds;
+    const occupiedBeds = this.data.beds.filter(b => 
+      activeResidents.some(r => 
+        r.current_bed_id === b.id ||
+        (r.current_room_id === b.room_id && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
+      )
+    ).length;
+    const vacantBeds = Math.max(0, totalBeds - occupiedBeds);
     const occupancyRate = totalBeds > 0 ? Number(((occupiedBeds / totalBeds) * 100).toFixed(1)) : 0;
 
     // Expected Monthly Collection for Current Month (from active residents)
@@ -844,6 +851,7 @@ class DatabaseService {
       timestamp: new Date().toISOString()
     });
 
+    this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     return { resident, old_room: oldRoom, new_room: newRoom };
   }
@@ -917,8 +925,38 @@ class DatabaseService {
       timestamp: new Date().toISOString()
     });
 
+    this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     return resident;
+  }
+
+  public deleteResident(residentId: string, adminUser?: string): { success: boolean; id: string } {
+    const resIndex = this.data.residents.findIndex(r => r.id === residentId);
+    if (resIndex === -1) {
+      throw new Error('Resident not found.');
+    }
+    const resident = this.data.residents[resIndex];
+
+    // Remove from array
+    this.data.residents.splice(resIndex, 1);
+
+    // Remove or clean up assignments
+    this.data.room_assignments = this.data.room_assignments.filter(a => a.resident_id !== residentId);
+
+    // Audit log
+    this.data.audit_logs.push({
+      id: generateUniqueId('AUD'),
+      admin_user: adminUser || this.data.settings?.admin_name || 'Administrator',
+      action: 'DELETE_RESIDENT',
+      entity_type: 'RESIDENT',
+      entity_id: residentId,
+      details: `Permanently deleted resident ${resident.name}. Released any room/bed assignments.`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.sanitizeAndSyncOccupancy();
+    this.saveToDisk();
+    return { success: true, id: residentId };
   }
 
   // ADD EXPENSE (TEST 4 Workflow)
@@ -1094,6 +1132,7 @@ class DatabaseService {
       timestamp: new Date().toISOString()
     });
 
+    this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     return newResident;
   }
@@ -1128,6 +1167,7 @@ class DatabaseService {
       timestamp: new Date().toISOString()
     });
 
+    this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     return resident;
   }
@@ -1322,24 +1362,31 @@ class DatabaseService {
     const room = this.data.rooms.find(r => r.id === roomId || r.room_number === roomId);
     if (!room) throw new Error('Room not found');
 
-    // Get all assignments for this room (current and historical)
-    const roomAssignments = this.data.room_assignments.filter(a => a.room_id === room.id || a.room_number === room.room_number);
+    // Get all assignments for this room (current and historical) for known residents
+    const roomAssignments = this.data.room_assignments.filter(
+      a => (a.room_id === room.id || a.room_number === room.room_number) &&
+           this.data.residents.some(r => r.id === a.resident_id)
+    );
     const residentIds = Array.from(new Set(roomAssignments.map(a => a.resident_id)));
 
     // Also include current active occupants in this room by room id or room number
     const currentResidents = this.data.residents.filter(r => 
-      r.current_room_id === room.id || 
-      (r.current_room_number && r.current_room_number.toString() === room.room_number.toString())
+      r.status === 'ACTIVE' && (
+        r.current_room_id === room.id || 
+        (r.current_room_number && r.current_room_number.toString() === room.room_number.toString())
+      )
     );
     currentResidents.forEach(r => {
       if (!residentIds.includes(r.id)) residentIds.push(r.id);
     });
 
-    // Also check occupants assigned to beds in this room
+    // Also check occupants assigned to beds in this room if they exist in residents
     if (room.beds) {
       room.beds.forEach(b => {
         if (b.current_resident_id && !residentIds.includes(b.current_resident_id)) {
-          residentIds.push(b.current_resident_id);
+          if (this.data.residents.some(r => r.id === b.current_resident_id)) {
+            residentIds.push(b.current_resident_id);
+          }
         }
       });
     }
@@ -1352,6 +1399,36 @@ class DatabaseService {
 
     // Default primary active month for fast ledger inspection (August 2026 or latest)
     const activeLedgerMonth = months.includes('2026-08') ? '2026-08' : months[months.length - 1];
+
+    if (residentIds.length === 0) {
+      const emptyMatrix = (room.beds || []).map(b => {
+        const monthlyAmounts: Record<string, { paid: number; expected: number; balance: number; paymentId?: string }> = {};
+        months.forEach(m => {
+          monthlyAmounts[m] = { paid: 0, expected: room.monthly_fee || 0, balance: 0 };
+        });
+        return {
+          bed_number: b.bed_number,
+          resident_id: null,
+          resident_name: 'Vacant Bed',
+          status: 'VACANT',
+          monthly_fee: room.monthly_fee || 0,
+          months: monthlyAmounts,
+          paid_amount: 0,
+          due_balance: 0,
+          total_paid: 0,
+          total_balance: 0,
+          active_month: activeLedgerMonth,
+          current_advance: 0
+        };
+      });
+
+      return {
+        room,
+        months,
+        active_month: activeLedgerMonth,
+        matrix: emptyMatrix
+      };
+    }
 
     const matrix = residentIds.map(resId => {
       const res = this.data.residents.find(r => r.id === resId);
@@ -1922,6 +1999,150 @@ class DatabaseService {
     floor.occupied_beds = floorRooms.reduce((sum, r) => sum + r.occupied_beds_count, 0);
     floor.vacant_beds = floor.total_beds - floor.occupied_beds;
     floor.rooms = floorRooms;
+  }
+
+  public sanitizeAndSyncOccupancy(): void {
+    const activeResidents = Array.isArray(this.data.residents)
+      ? this.data.residents.filter(r => r.status === 'ACTIVE')
+      : [];
+
+    // 1. Sync global beds array
+    if (Array.isArray(this.data.beds)) {
+      this.data.beds.forEach(b => {
+        const assigned = activeResidents.find(r => 
+          r.current_bed_id === b.id ||
+          (r.current_room_id === b.room_id && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
+        );
+        if (assigned) {
+          b.status = 'OCCUPIED';
+          b.current_resident_id = assigned.id;
+          b.current_resident_name = assigned.name;
+        } else {
+          b.status = 'VACANT';
+          b.current_resident_id = null;
+          b.current_resident_name = null;
+        }
+      });
+    }
+
+    // 2. Sync rooms and embedded room.beds
+    if (Array.isArray(this.data.rooms)) {
+      this.data.rooms.forEach(r => {
+        if (Array.isArray(r.beds)) {
+          r.beds.forEach(b => {
+            const assigned = activeResidents.find(res => 
+              res.current_bed_id === b.id ||
+              (res.current_room_id === r.id && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id)) ||
+              (res.current_room_number === r.room_number && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id))
+            );
+            if (assigned) {
+              b.status = 'OCCUPIED';
+              b.current_resident_id = assigned.id;
+              b.current_resident_name = assigned.name;
+            } else {
+              b.status = 'VACANT';
+              b.current_resident_id = null;
+              b.current_resident_name = null;
+            }
+          });
+        } else {
+          r.beds = [];
+        }
+        r.occupied_beds_count = r.beds.filter(b => b.status === 'OCCUPIED').length;
+        r.vacant_beds_count = Math.max(0, (r.capacity || 0) - r.occupied_beds_count);
+        r.status = r.occupied_beds_count === r.capacity && r.capacity > 0 ? 'FULL' : 'AVAILABLE';
+      });
+    }
+
+    // 3. Sync floors and floor.rooms
+    if (Array.isArray(this.data.floors)) {
+      this.data.floors.forEach(f => {
+        const floorRooms = (this.data.rooms || []).filter(
+          r => r.floor_id === f.id || r.floor_number === f.floor_number
+        );
+        f.total_rooms = floorRooms.length;
+        f.total_beds = floorRooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
+        f.occupied_beds = floorRooms.reduce((sum, r) => sum + (r.occupied_beds_count || 0), 0);
+        f.vacant_beds = Math.max(0, f.total_beds - f.occupied_beds);
+        f.rooms = floorRooms;
+      });
+    }
+  }
+
+  public removeSampleData(): void {
+    this.data.residents = [];
+    this.data.payments = [];
+    this.data.advances = [];
+    this.data.expenses = [];
+    this.data.staff = [];
+    this.data.salary_payments = [];
+    this.data.maintenance_requests = [];
+    this.data.complaints = [];
+    this.data.resident_documents = [];
+    this.data.room_assignments = [];
+    this.data.whatsapp_messages = [];
+
+    // Reset all beds in all rooms to VACANT
+    this.data.beds.forEach(b => {
+      b.status = 'VACANT';
+      b.current_resident_id = null;
+      b.current_resident_name = null;
+    });
+
+    this.data.rooms.forEach(r => {
+      r.occupied_beds_count = 0;
+      r.vacant_beds_count = r.capacity;
+      r.status = 'AVAILABLE';
+      r.beds.forEach(b => {
+        b.status = 'VACANT';
+        b.current_resident_id = null;
+        b.current_resident_name = null;
+      });
+    });
+
+    this.data.floors.forEach(f => {
+      f.occupied_beds = 0;
+      f.vacant_beds = f.total_beds;
+      if (Array.isArray(f.rooms)) {
+        f.rooms.forEach(r => {
+          r.occupied_beds_count = 0;
+          r.vacant_beds_count = r.capacity;
+          r.status = 'AVAILABLE';
+          r.beds.forEach(b => {
+            b.status = 'VACANT';
+            b.current_resident_id = null;
+            b.current_resident_name = null;
+          });
+        });
+      }
+    });
+
+    this.data.notifications = [
+      {
+        id: generateUniqueId('NOTIF'),
+        title: 'Sample Data Removed',
+        message: 'All test residents, payments, and sample records have been cleared. All rooms and beds are now vacant and ready for real residents.',
+        type: 'SYSTEM',
+        timestamp: new Date().toISOString(),
+        is_read: false
+      }
+    ];
+
+    this.data.audit_logs = [
+      {
+        id: generateUniqueId('LOG'),
+        action: 'SAMPLE_DATA_REMOVED',
+        entity_type: 'SYSTEM',
+        entity_id: 'ALL',
+        details: 'All sample residents and payments cleared. All beds reset to vacant.',
+        admin_user: this.data.settings?.admin_name || 'Administrator',
+        timestamp: new Date().toISOString()
+      }
+    ];
+
+    this.sanitizeAndSyncOccupancy();
+    this.saveToDisk();
+    console.log('🧹 Sample data removed. All rooms & beds are vacant and ready.');
   }
 
   public clearAllData(): void {

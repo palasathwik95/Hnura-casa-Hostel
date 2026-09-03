@@ -140,6 +140,7 @@ interface AppContextType {
   transferRoom: (arg1: any, arg2?: any) => Promise<any>;
   markResidentVacated: (arg1: any, arg2?: any) => Promise<Resident>;
   vacateResident: (arg1: any, arg2?: any) => Promise<Resident>;
+  deleteResident: (residentId: string) => Promise<void>;
   createResident: (payload: any) => Promise<Resident>;
   editResident: (arg1: any, arg2?: any) => Promise<Resident>;
   updateResident: (arg1: any, arg2?: any) => Promise<Resident>;
@@ -200,6 +201,7 @@ interface AppContextType {
   updateSettings: (payload: Partial<SystemSettings>) => Promise<SystemSettings>;
   resetDemoDatabase: () => Promise<void>;
   clearAllData: () => Promise<void>;
+  removeSampleData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -364,6 +366,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return res.data;
     } catch (err: any) {
       addToast('error', 'Vacating Action Failed', err.message);
+      throw err;
+    }
+  };
+
+  // ACTION: Delete Resident Permanently
+  const deleteResident = async (residentId: string) => {
+    try {
+      await api.deleteResident(residentId, settings?.admin_name);
+      await refreshData();
+      addToast('info', 'Resident Deleted', 'Resident record and associated room/bed assignments have been removed.');
+    } catch (err: any) {
+      addToast('error', 'Delete Resident Failed', err.message);
       throw err;
     }
   };
@@ -798,6 +812,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // ACTION: Remove Sample Data (Keep configured rooms & floors)
+  const removeSampleData = async () => {
+    try {
+      const data = await api.removeSampleData();
+      applySnapshot(data);
+      addToast('success', 'Sample Data Removed', 'All sample residents, payments, and activity cleared. Rooms and beds are now vacant and ready.');
+    } catch (err: any) {
+      addToast('error', 'Removal Failed', err.message);
+      throw err;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -881,6 +907,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         transferRoom,
         markResidentVacated,
         vacateResident: markResidentVacated,
+        deleteResident,
         createResident,
         editResident,
         updateResident: editResident,
@@ -911,7 +938,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         disburseSalary: recordSalary,
         updateSettings,
         resetDemoDatabase,
-        clearAllData
+        clearAllData,
+        removeSampleData
       }}
     >
       {children}

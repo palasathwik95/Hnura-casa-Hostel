@@ -25,7 +25,8 @@ import {
   XCircle,
   Sparkles,
   Camera,
-  Upload
+  Upload,
+  Trash2
 } from 'lucide-react';
 
 interface ResidentProfileProps {
@@ -59,6 +60,7 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
     setPrintReceiptPayment,
     sendDirectWhatsApp,
     updateResident,
+    deleteResident,
     addToast
   } = useApp();
 
@@ -173,6 +175,17 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
     else openVacateResidentModal(resident);
   };
 
+  const handleDelete = async () => {
+    if (confirm(`Are you sure you want to permanently delete resident ${resident.name}? This will free their bed and remove this resident record from the system.`)) {
+      try {
+        await deleteResident(resident.id);
+        onBack();
+      } catch (err: any) {
+        // toast handled in context
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Navigation & Action Header */}
@@ -250,6 +263,15 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
             title="Edit Resident"
           >
             <Edit className="w-4 h-4" />
+          </button>
+
+          {/* Delete Resident */}
+          <button
+            onClick={handleDelete}
+            className="p-2 rounded-xl bg-[#141414] border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors"
+            title="Permanently Delete Resident"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
