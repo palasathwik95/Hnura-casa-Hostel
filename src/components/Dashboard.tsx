@@ -43,6 +43,7 @@ export const Dashboard: React.FC = () => {
     payments,
     expenses,
     staff,
+    salaryPayments,
     maintenanceRequests,
     setActiveTab,
     setSelectedResidentId,

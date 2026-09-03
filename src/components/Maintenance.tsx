@@ -33,7 +33,7 @@ export const Maintenance: React.FC = () => {
     const q = searchTerm.toLowerCase();
     return (
       !q ||
-      m.title.toLowerCase().includes(q) ||
+      (m.title || m.description || m.category).toLowerCase().includes(q) ||
       m.category.toLowerCase().includes(q) ||
       (m.room_number && m.room_number.includes(q)) ||
       m.assigned_staff.toLowerCase().includes(q)
@@ -152,14 +152,14 @@ export const Maintenance: React.FC = () => {
                 </span>
               </div>
 
-              <h4 className="text-sm font-bold text-white mt-3">{req.title}</h4>
+              <h4 className="text-sm font-bold text-white mt-3">{req.title || `${req.category} Maintenance`}</h4>
               <p className="text-xs text-[#E4E4E7] mt-1 leading-relaxed">{req.description}</p>
 
               <div className="mt-3.5 space-y-1.5 text-xs text-[#8E8E9F] font-mono bg-[#0B0B0C] p-3 rounded-xl border border-white/[0.06]">
                 <p className="flex justify-between">
                   <span>Location:</span>
                   <span className="text-white font-bold">
-                    {req.room_number ? `Room ${req.room_number} (Floor ${req.floor_number})` : 'Common Area'}
+                    {req.room_number ? `Room ${req.room_number}${req.floor_number !== undefined ? ` (Floor ${req.floor_number})` : ''}` : 'Common Area'}
                   </span>
                 </p>
                 <p className="flex justify-between">

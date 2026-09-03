@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
   } = useApp();
 
   const [notifOpen, setNotifOpen] = useState(false);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !(n.is_read || n.read)).length;
 
   // Keyboard shortcut listener for Command/Ctrl + K
   useEffect(() => {

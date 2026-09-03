@@ -32,10 +32,10 @@ export const Expenses: React.FC = () => {
       if (!q) return true;
 
       return (
-        e.title.toLowerCase().includes(q) ||
+        (e.title || e.description || e.subcategory).toLowerCase().includes(q) ||
         e.category.toLowerCase().includes(q) ||
         e.vendor?.toLowerCase().includes(q) ||
-        e.items?.some(i => i.item_name.toLowerCase().includes(q))
+        e.items?.some(i => (i.item_name || i.name).toLowerCase().includes(q))
       );
     });
   }, [expenses, selectedMonth, categoryFilter, searchTerm]);
@@ -189,7 +189,7 @@ export const Expenses: React.FC = () => {
                     {getCategoryIcon(exp.category)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">{exp.title}</h4>
+                    <h4 className="font-bold text-white text-sm">{exp.title || exp.description || exp.subcategory}</h4>
                     <p className="text-[10px] text-[#8E8E9F] font-mono">
                       {exp.id} • {exp.category}
                     </p>
@@ -212,7 +212,7 @@ export const Expenses: React.FC = () => {
                       key={idx}
                       className="px-2 py-0.5 rounded-lg bg-[#0B0B0C] text-[#E4E4E7] font-mono text-[10px] border border-white/[0.06]"
                     >
-                      {item.item_name} ({item.quantity} {item.unit}) - ₹{item.total_price}
+                      {item.item_name || item.name} ({item.quantity} {item.unit}) - ₹{item.total_price ?? item.total}
                     </span>
                   ))}
                 </div>
@@ -253,7 +253,7 @@ export const Expenses: React.FC = () => {
                           {getCategoryIcon(exp.category)}
                         </div>
                         <div>
-                          <p className="font-bold text-white text-xs">{exp.title}</p>
+                          <p className="font-bold text-white text-xs">{exp.title || exp.description || exp.subcategory}</p>
                           <p className="text-[10px] text-[#8E8E9F] font-mono flex items-center space-x-1">
                             <span>{exp.id}</span>
                             <span>•</span>
@@ -282,7 +282,7 @@ export const Expenses: React.FC = () => {
                               key={idx}
                               className="inline-block mr-1.5 mb-1 px-2.5 py-0.5 rounded-lg bg-[#0B0B0C] text-[#E4E4E7] font-mono text-[10px] border border-white/[0.08]"
                             >
-                              {item.item_name} ({item.quantity} {item.unit}) - ₹{item.total_price}
+                              {item.item_name || item.name} ({item.quantity} {item.unit}) - ₹{item.total_price ?? item.total}
                             </span>
                           ))}
                         </div>
@@ -293,7 +293,7 @@ export const Expenses: React.FC = () => {
 
                     {/* Mode */}
                     <td className="py-3.5 px-3 font-mono text-[#8E8E9F]">
-                      {exp.payment_mode}
+                      {exp.payment_mode || exp.payment_method}
                     </td>
 
                     {/* Amount */}

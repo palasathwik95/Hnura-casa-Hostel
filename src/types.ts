@@ -27,15 +27,18 @@ export type ExpenseCategory =
   | 'INTERNET' 
   | 'GAS' 
   | 'SALARIES' 
+  | 'STAFF_SALARY'
   | 'MAINTENANCE' 
   | 'CLEANING' 
   | 'OFFICE' 
   | 'REPAIRS' 
+  | 'MESS_FOOD'
+  | 'OTHER'
   | 'MISCELLANEOUS';
 
-export type PriorityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type PriorityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'EMERGENCY';
 
-export type TicketStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type TicketStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'COMPLETED';
 
 export type StaffRole = 'Cook' | 'Warden' | 'Security' | 'Cleaning' | 'Maintenance Tech' | 'Manager';
 
@@ -196,20 +199,26 @@ export interface AdvanceAccount {
 export interface GroceryItem {
   id: string;
   name: string;
+  item_name?: string;
   quantity: number;
   unit: string; // "kg", "liters", "units", "packets", "bags"
   unit_price: number;
   total: number;
+  total_price?: number;
 }
 
 export interface Expense {
   id: string;
+  title?: string;
   category: ExpenseCategory;
   subcategory: string;
   amount: number;
   date: string;
   vendor: string;
+  paid_to?: string;
   payment_method: PaymentMethod;
+  payment_mode?: string;
+  expense_date?: string;
   description: string;
   receipt_url?: string;
   items?: GroceryItem[];
@@ -224,6 +233,7 @@ export interface Staff {
   role: StaffRole;
   joining_date: string;
   monthly_salary: number;
+  salary?: number;
   status: StaffStatus;
   photo_url?: string;
   address?: string;
@@ -249,9 +259,12 @@ export interface SalaryPayment {
 
 export interface MaintenanceRequest {
   id: string;
+  title?: string;
   resident_id?: string;
   resident_name?: string;
+  room_id?: string;
   room_number: string;
+  floor_number?: number;
   bed_number?: number;
   category: string;
   description: string;
@@ -300,6 +313,8 @@ export interface NotificationItem {
   message: string;
   timestamp: string;
   is_read: boolean;
+  read?: boolean;
+  created_at?: string;
   link_tab?: string;
   related_id?: string;
 }
@@ -318,6 +333,7 @@ export interface AuditLog {
 
 export interface SystemSettings {
   property_name: string;
+  hostel_name?: string;
   hostel_code: string;
   address: string;
   contact_phone: string;

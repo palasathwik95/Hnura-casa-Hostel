@@ -42,6 +42,7 @@ export type ActiveNavTab =
   | 'kyc'
   | 'notifications'
   | 'audit_logs'
+  | 'audit'
   | 'settings';
 
 interface Toast {
@@ -74,6 +75,7 @@ interface AppContextType {
   roomAssignments: RoomAssignment[];
   whatsappMessages: WhatsAppMessage[];
   notifications: NotificationItem[];
+  markNotificationRead: (id: string) => void;
   auditLogs: AuditLog[];
   metrics: DashboardMetrics | null;
 
@@ -87,7 +89,7 @@ interface AppContextType {
 
   // Global Search Modal
   searchModalOpen: boolean;
-  setSearchModalOpen: (open: boolean) => void;
+  setSearchModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Quick Action Modals
   addRoomModalOpen: boolean;
@@ -98,6 +100,7 @@ interface AppContextType {
   setEditResidentModalOpen: (open: boolean) => void;
   editingResident: Resident | null;
   setEditingResident: (r: Resident | null) => void;
+  closeEditResidentModal: () => void;
   transferModalOpen: boolean;
   setTransferModalOpen: (open: boolean) => void;
   transferringResident: Resident | null;
@@ -847,6 +850,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         roomAssignments,
         whatsappMessages,
         notifications,
+        markNotificationRead: (id: string) => {
+          setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true, read: true } : n));
+        },
         auditLogs,
         metrics,
         selectedResidentId,
@@ -865,6 +871,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setEditResidentModalOpen,
         editingResident,
         setEditingResident,
+        closeEditResidentModal: () => {
+          setEditResidentModalOpen(false);
+          setEditingResident(null);
+        },
         transferModalOpen,
         setTransferModalOpen,
         transferringResident,

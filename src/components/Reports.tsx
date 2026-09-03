@@ -125,10 +125,10 @@ export const Reports: React.FC = () => {
           e.id,
           e.date,
           e.category,
-          e.title,
+          e.title || e.description || e.subcategory,
           e.vendor || 'N/A',
           e.amount.toString(),
-          e.payment_mode
+          e.payment_mode || e.payment_method
         ])
       ];
       downloadCSV(`HanuraCasa_Expenses_${selectedMonth}.csv`, rows);
@@ -372,12 +372,12 @@ export const Reports: React.FC = () => {
                 {expenses.filter(e => e.date.startsWith(selectedMonth)).map(e => (
                   <tr key={e.id} className="hover:bg-white/[0.03] transition-colors">
                     <td className="py-3.5 px-4">
-                      <p className="font-bold text-white">{e.title}</p>
+                      <p className="font-bold text-white">{e.title || e.description || e.subcategory}</p>
                       <p className="text-[10px] text-[#0CC6FF] font-mono">{e.category}</p>
                     </td>
                     <td className="py-3.5 px-3 font-mono text-[#8E8E9F]">{new Date(e.date).toLocaleDateString()}</td>
                     <td className="py-3.5 px-3 text-[#E4E4E7]">{e.vendor || 'N/A'}</td>
-                    <td className="py-3.5 px-3 font-mono text-[#8E8E9F]">{e.payment_mode}</td>
+                    <td className="py-3.5 px-3 font-mono text-[#8E8E9F]">{e.payment_mode || e.payment_method}</td>
                     <td className="py-3.5 px-4 text-right font-mono font-bold text-[#FF6F3C]">
                       ₹{(e.amount || 0).toLocaleString('en-IN')}
                     </td>
