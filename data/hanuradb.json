@@ -19,11 +19,2346 @@
     "admin_email": "palasathwik95@gmail.com",
     "admin_role": "Super Administrator"
   },
-  "floors": [],
-  "rooms": [],
-  "beds": [],
-  "residents": [],
-  "payments": [],
+  "floors": [
+    {
+      "id": "floor_0",
+      "floor_number": 0,
+      "name": "Ground Floor",
+      "description": "",
+      "total_rooms": 2,
+      "total_beds": 8,
+      "occupied_beds": 4,
+      "vacant_beds": 4,
+      "rooms": [
+        {
+          "id": "room_G1",
+          "floor_id": "floor_0",
+          "room_number": "G1",
+          "floor_number": 0,
+          "capacity": 4,
+          "occupied_beds_count": 4,
+          "vacant_beds_count": 0,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 5500,
+          "status": "FULL",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_G1_1",
+              "bed_number": 1,
+              "room_id": "room_G1",
+              "room_number": "G1",
+              "floor_number": 0,
+              "status": "OCCUPIED",
+              "price": 5500,
+              "current_resident_id": "RES-1679",
+              "current_resident_name": "Sathwik"
+            },
+            {
+              "id": "bed_G1_2",
+              "bed_number": 2,
+              "room_id": "room_G1",
+              "room_number": "G1",
+              "floor_number": 0,
+              "status": "OCCUPIED",
+              "price": 5500,
+              "current_resident_id": "RES-8403",
+              "current_resident_name": "sandeep"
+            },
+            {
+              "id": "bed_G1_3",
+              "bed_number": 3,
+              "room_id": "room_G1",
+              "room_number": "G1",
+              "floor_number": 0,
+              "status": "OCCUPIED",
+              "price": 5500,
+              "current_resident_id": "RES-3726",
+              "current_resident_name": "Amith"
+            },
+            {
+              "id": "bed_G1_4",
+              "bed_number": 4,
+              "room_id": "room_G1",
+              "room_number": "G1",
+              "floor_number": 0,
+              "status": "OCCUPIED",
+              "price": 5500,
+              "current_resident_id": "RES-3930",
+              "current_resident_name": "Rakesh"
+            }
+          ]
+        },
+        {
+          "id": "room_G2",
+          "floor_id": "floor_0",
+          "room_number": "G2",
+          "floor_number": 0,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 5500,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_G2_1",
+              "bed_number": 1,
+              "room_id": "room_G2",
+              "room_number": "G2",
+              "floor_number": 0,
+              "status": "VACANT",
+              "price": 5500,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_G2_2",
+              "bed_number": 2,
+              "room_id": "room_G2",
+              "room_number": "G2",
+              "floor_number": 0,
+              "status": "VACANT",
+              "price": 5500,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_G2_3",
+              "bed_number": 3,
+              "room_id": "room_G2",
+              "room_number": "G2",
+              "floor_number": 0,
+              "status": "VACANT",
+              "price": 5500,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_G2_4",
+              "bed_number": 4,
+              "room_id": "room_G2",
+              "room_number": "G2",
+              "floor_number": 0,
+              "status": "VACANT",
+              "price": 5500,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "floor_1",
+      "floor_number": 1,
+      "name": "Floor 1",
+      "description": "",
+      "total_rooms": 10,
+      "total_beds": 41,
+      "occupied_beds": 1,
+      "vacant_beds": 40,
+      "rooms": [
+        {
+          "id": "room_101",
+          "floor_id": "floor_1",
+          "room_number": "101",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_101_1",
+              "bed_number": 1,
+              "room_id": "room_101",
+              "room_number": "101",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_101_2",
+              "bed_number": 2,
+              "room_id": "room_101",
+              "room_number": "101",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_101_3",
+              "bed_number": 3,
+              "room_id": "room_101",
+              "room_number": "101",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_101_4",
+              "bed_number": 4,
+              "room_id": "room_101",
+              "room_number": "101",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_102",
+          "floor_id": "floor_1",
+          "room_number": "102",
+          "floor_number": 1,
+          "capacity": 5,
+          "occupied_beds_count": 1,
+          "vacant_beds_count": 4,
+          "sharing_type": "5-Sharing",
+          "monthly_fee": 5000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_102_1",
+              "bed_number": 1,
+              "room_id": "room_102",
+              "room_number": "102",
+              "floor_number": 1,
+              "status": "OCCUPIED",
+              "price": 5000,
+              "current_resident_id": "RES-5298",
+              "current_resident_name": "Patel Aaliya "
+            },
+            {
+              "id": "bed_102_2",
+              "bed_number": 2,
+              "room_id": "room_102",
+              "room_number": "102",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 5000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_102_3",
+              "bed_number": 3,
+              "room_id": "room_102",
+              "room_number": "102",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 5000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_102_4",
+              "bed_number": 4,
+              "room_id": "room_102",
+              "room_number": "102",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 5000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_102_5",
+              "bed_number": 5,
+              "room_id": "room_102",
+              "room_number": "102",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 5000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_103",
+          "floor_id": "floor_1",
+          "room_number": "103",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_103_1",
+              "bed_number": 1,
+              "room_id": "room_103",
+              "room_number": "103",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_103_2",
+              "bed_number": 2,
+              "room_id": "room_103",
+              "room_number": "103",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_103_3",
+              "bed_number": 3,
+              "room_id": "room_103",
+              "room_number": "103",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_103_4",
+              "bed_number": 4,
+              "room_id": "room_103",
+              "room_number": "103",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_104",
+          "floor_id": "floor_1",
+          "room_number": "104",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_104_1",
+              "bed_number": 1,
+              "room_id": "room_104",
+              "room_number": "104",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_104_2",
+              "bed_number": 2,
+              "room_id": "room_104",
+              "room_number": "104",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_104_3",
+              "bed_number": 3,
+              "room_id": "room_104",
+              "room_number": "104",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_104_4",
+              "bed_number": 4,
+              "room_id": "room_104",
+              "room_number": "104",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_105",
+          "floor_id": "floor_1",
+          "room_number": "105",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_105_1",
+              "bed_number": 1,
+              "room_id": "room_105",
+              "room_number": "105",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_105_2",
+              "bed_number": 2,
+              "room_id": "room_105",
+              "room_number": "105",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_105_3",
+              "bed_number": 3,
+              "room_id": "room_105",
+              "room_number": "105",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_105_4",
+              "bed_number": 4,
+              "room_id": "room_105",
+              "room_number": "105",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_106",
+          "floor_id": "floor_1",
+          "room_number": "106",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_106_1",
+              "bed_number": 1,
+              "room_id": "room_106",
+              "room_number": "106",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_106_2",
+              "bed_number": 2,
+              "room_id": "room_106",
+              "room_number": "106",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_106_3",
+              "bed_number": 3,
+              "room_id": "room_106",
+              "room_number": "106",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_106_4",
+              "bed_number": 4,
+              "room_id": "room_106",
+              "room_number": "106",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_107",
+          "floor_id": "floor_1",
+          "room_number": "107",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_107_1",
+              "bed_number": 1,
+              "room_id": "room_107",
+              "room_number": "107",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_107_2",
+              "bed_number": 2,
+              "room_id": "room_107",
+              "room_number": "107",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_107_3",
+              "bed_number": 3,
+              "room_id": "room_107",
+              "room_number": "107",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_107_4",
+              "bed_number": 4,
+              "room_id": "room_107",
+              "room_number": "107",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_108",
+          "floor_id": "floor_1",
+          "room_number": "108",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_108_1",
+              "bed_number": 1,
+              "room_id": "room_108",
+              "room_number": "108",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_108_2",
+              "bed_number": 2,
+              "room_id": "room_108",
+              "room_number": "108",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_108_3",
+              "bed_number": 3,
+              "room_id": "room_108",
+              "room_number": "108",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_108_4",
+              "bed_number": 4,
+              "room_id": "room_108",
+              "room_number": "108",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_109",
+          "floor_id": "floor_1",
+          "room_number": "109",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_109_1",
+              "bed_number": 1,
+              "room_id": "room_109",
+              "room_number": "109",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_109_2",
+              "bed_number": 2,
+              "room_id": "room_109",
+              "room_number": "109",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_109_3",
+              "bed_number": 3,
+              "room_id": "room_109",
+              "room_number": "109",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_109_4",
+              "bed_number": 4,
+              "room_id": "room_109",
+              "room_number": "109",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        },
+        {
+          "id": "room_110",
+          "floor_id": "floor_1",
+          "room_number": "110",
+          "floor_number": 1,
+          "capacity": 4,
+          "occupied_beds_count": 0,
+          "vacant_beds_count": 4,
+          "sharing_type": "4-Sharing",
+          "monthly_fee": 3000,
+          "status": "AVAILABLE",
+          "amenities": [
+            "Attached Washroom",
+            "Wi-Fi",
+            "Wardrobe",
+            "Study Desk"
+          ],
+          "beds": [
+            {
+              "id": "bed_110_1",
+              "bed_number": 1,
+              "room_id": "room_110",
+              "room_number": "110",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_110_2",
+              "bed_number": 2,
+              "room_id": "room_110",
+              "room_number": "110",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_110_3",
+              "bed_number": 3,
+              "room_id": "room_110",
+              "room_number": "110",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            },
+            {
+              "id": "bed_110_4",
+              "bed_number": 4,
+              "room_id": "room_110",
+              "room_number": "110",
+              "floor_number": 1,
+              "status": "VACANT",
+              "price": 3000,
+              "current_resident_id": null,
+              "current_resident_name": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_101",
+      "floor_id": "floor_1",
+      "room_number": "101",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_101_1",
+          "bed_number": 1,
+          "room_id": "room_101",
+          "room_number": "101",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_101_2",
+          "bed_number": 2,
+          "room_id": "room_101",
+          "room_number": "101",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_101_3",
+          "bed_number": 3,
+          "room_id": "room_101",
+          "room_number": "101",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_101_4",
+          "bed_number": 4,
+          "room_id": "room_101",
+          "room_number": "101",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_102",
+      "floor_id": "floor_1",
+      "room_number": "102",
+      "floor_number": 1,
+      "capacity": 5,
+      "occupied_beds_count": 1,
+      "vacant_beds_count": 4,
+      "sharing_type": "5-Sharing",
+      "monthly_fee": 5000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_102_1",
+          "bed_number": 1,
+          "room_id": "room_102",
+          "room_number": "102",
+          "floor_number": 1,
+          "status": "OCCUPIED",
+          "price": 5000,
+          "current_resident_id": "RES-5298",
+          "current_resident_name": "Patel Aaliya "
+        },
+        {
+          "id": "bed_102_2",
+          "bed_number": 2,
+          "room_id": "room_102",
+          "room_number": "102",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 5000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_102_3",
+          "bed_number": 3,
+          "room_id": "room_102",
+          "room_number": "102",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 5000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_102_4",
+          "bed_number": 4,
+          "room_id": "room_102",
+          "room_number": "102",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 5000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_102_5",
+          "bed_number": 5,
+          "room_id": "room_102",
+          "room_number": "102",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 5000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_103",
+      "floor_id": "floor_1",
+      "room_number": "103",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_103_1",
+          "bed_number": 1,
+          "room_id": "room_103",
+          "room_number": "103",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_103_2",
+          "bed_number": 2,
+          "room_id": "room_103",
+          "room_number": "103",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_103_3",
+          "bed_number": 3,
+          "room_id": "room_103",
+          "room_number": "103",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_103_4",
+          "bed_number": 4,
+          "room_id": "room_103",
+          "room_number": "103",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_104",
+      "floor_id": "floor_1",
+      "room_number": "104",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_104_1",
+          "bed_number": 1,
+          "room_id": "room_104",
+          "room_number": "104",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_104_2",
+          "bed_number": 2,
+          "room_id": "room_104",
+          "room_number": "104",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_104_3",
+          "bed_number": 3,
+          "room_id": "room_104",
+          "room_number": "104",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_104_4",
+          "bed_number": 4,
+          "room_id": "room_104",
+          "room_number": "104",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_105",
+      "floor_id": "floor_1",
+      "room_number": "105",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_105_1",
+          "bed_number": 1,
+          "room_id": "room_105",
+          "room_number": "105",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_105_2",
+          "bed_number": 2,
+          "room_id": "room_105",
+          "room_number": "105",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_105_3",
+          "bed_number": 3,
+          "room_id": "room_105",
+          "room_number": "105",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_105_4",
+          "bed_number": 4,
+          "room_id": "room_105",
+          "room_number": "105",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_106",
+      "floor_id": "floor_1",
+      "room_number": "106",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_106_1",
+          "bed_number": 1,
+          "room_id": "room_106",
+          "room_number": "106",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_106_2",
+          "bed_number": 2,
+          "room_id": "room_106",
+          "room_number": "106",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_106_3",
+          "bed_number": 3,
+          "room_id": "room_106",
+          "room_number": "106",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_106_4",
+          "bed_number": 4,
+          "room_id": "room_106",
+          "room_number": "106",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_107",
+      "floor_id": "floor_1",
+      "room_number": "107",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_107_1",
+          "bed_number": 1,
+          "room_id": "room_107",
+          "room_number": "107",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_107_2",
+          "bed_number": 2,
+          "room_id": "room_107",
+          "room_number": "107",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_107_3",
+          "bed_number": 3,
+          "room_id": "room_107",
+          "room_number": "107",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_107_4",
+          "bed_number": 4,
+          "room_id": "room_107",
+          "room_number": "107",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_108",
+      "floor_id": "floor_1",
+      "room_number": "108",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_108_1",
+          "bed_number": 1,
+          "room_id": "room_108",
+          "room_number": "108",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_108_2",
+          "bed_number": 2,
+          "room_id": "room_108",
+          "room_number": "108",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_108_3",
+          "bed_number": 3,
+          "room_id": "room_108",
+          "room_number": "108",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_108_4",
+          "bed_number": 4,
+          "room_id": "room_108",
+          "room_number": "108",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_109",
+      "floor_id": "floor_1",
+      "room_number": "109",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_109_1",
+          "bed_number": 1,
+          "room_id": "room_109",
+          "room_number": "109",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_109_2",
+          "bed_number": 2,
+          "room_id": "room_109",
+          "room_number": "109",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_109_3",
+          "bed_number": 3,
+          "room_id": "room_109",
+          "room_number": "109",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_109_4",
+          "bed_number": 4,
+          "room_id": "room_109",
+          "room_number": "109",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_110",
+      "floor_id": "floor_1",
+      "room_number": "110",
+      "floor_number": 1,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 3000,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_110_1",
+          "bed_number": 1,
+          "room_id": "room_110",
+          "room_number": "110",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_110_2",
+          "bed_number": 2,
+          "room_id": "room_110",
+          "room_number": "110",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_110_3",
+          "bed_number": 3,
+          "room_id": "room_110",
+          "room_number": "110",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_110_4",
+          "bed_number": 4,
+          "room_id": "room_110",
+          "room_number": "110",
+          "floor_number": 1,
+          "status": "VACANT",
+          "price": 3000,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    },
+    {
+      "id": "room_G1",
+      "floor_id": "floor_0",
+      "room_number": "G1",
+      "floor_number": 0,
+      "capacity": 4,
+      "occupied_beds_count": 4,
+      "vacant_beds_count": 0,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "FULL",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_G1_1",
+          "bed_number": 1,
+          "room_id": "room_G1",
+          "room_number": "G1",
+          "floor_number": 0,
+          "status": "OCCUPIED",
+          "price": 5500,
+          "current_resident_id": "RES-1679",
+          "current_resident_name": "Sathwik"
+        },
+        {
+          "id": "bed_G1_2",
+          "bed_number": 2,
+          "room_id": "room_G1",
+          "room_number": "G1",
+          "floor_number": 0,
+          "status": "OCCUPIED",
+          "price": 5500,
+          "current_resident_id": "RES-8403",
+          "current_resident_name": "sandeep"
+        },
+        {
+          "id": "bed_G1_3",
+          "bed_number": 3,
+          "room_id": "room_G1",
+          "room_number": "G1",
+          "floor_number": 0,
+          "status": "OCCUPIED",
+          "price": 5500,
+          "current_resident_id": "RES-3726",
+          "current_resident_name": "Amith"
+        },
+        {
+          "id": "bed_G1_4",
+          "bed_number": 4,
+          "room_id": "room_G1",
+          "room_number": "G1",
+          "floor_number": 0,
+          "status": "OCCUPIED",
+          "price": 5500,
+          "current_resident_id": "RES-3930",
+          "current_resident_name": "Rakesh"
+        }
+      ]
+    },
+    {
+      "id": "room_G2",
+      "floor_id": "floor_0",
+      "room_number": "G2",
+      "floor_number": 0,
+      "capacity": 4,
+      "occupied_beds_count": 0,
+      "vacant_beds_count": 4,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "AVAILABLE",
+      "amenities": [
+        "Attached Washroom",
+        "Wi-Fi",
+        "Wardrobe",
+        "Study Desk"
+      ],
+      "beds": [
+        {
+          "id": "bed_G2_1",
+          "bed_number": 1,
+          "room_id": "room_G2",
+          "room_number": "G2",
+          "floor_number": 0,
+          "status": "VACANT",
+          "price": 5500,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_G2_2",
+          "bed_number": 2,
+          "room_id": "room_G2",
+          "room_number": "G2",
+          "floor_number": 0,
+          "status": "VACANT",
+          "price": 5500,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_G2_3",
+          "bed_number": 3,
+          "room_id": "room_G2",
+          "room_number": "G2",
+          "floor_number": 0,
+          "status": "VACANT",
+          "price": 5500,
+          "current_resident_id": null,
+          "current_resident_name": null
+        },
+        {
+          "id": "bed_G2_4",
+          "bed_number": 4,
+          "room_id": "room_G2",
+          "room_number": "G2",
+          "floor_number": 0,
+          "status": "VACANT",
+          "price": 5500,
+          "current_resident_id": null,
+          "current_resident_name": null
+        }
+      ]
+    }
+  ],
+  "beds": [
+    {
+      "id": "bed_G1_1",
+      "bed_number": 1,
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "floor_number": 0,
+      "status": "OCCUPIED",
+      "price": 5500,
+      "current_resident_id": "RES-1679",
+      "current_resident_name": "Sathwik"
+    },
+    {
+      "id": "bed_G1_2",
+      "bed_number": 2,
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "floor_number": 0,
+      "status": "OCCUPIED",
+      "price": 5500,
+      "current_resident_id": "RES-8403",
+      "current_resident_name": "sandeep"
+    },
+    {
+      "id": "bed_G1_3",
+      "bed_number": 3,
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "floor_number": 0,
+      "status": "OCCUPIED",
+      "price": 5500,
+      "current_resident_id": "RES-3726",
+      "current_resident_name": "Amith"
+    },
+    {
+      "id": "bed_G1_4",
+      "bed_number": 4,
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "floor_number": 0,
+      "status": "OCCUPIED",
+      "price": 5500,
+      "current_resident_id": "RES-3930",
+      "current_resident_name": "Rakesh"
+    },
+    {
+      "id": "bed_G2_1",
+      "bed_number": 1,
+      "room_id": "room_G2",
+      "room_number": "G2",
+      "floor_number": 0,
+      "status": "VACANT",
+      "price": 5500,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_G2_2",
+      "bed_number": 2,
+      "room_id": "room_G2",
+      "room_number": "G2",
+      "floor_number": 0,
+      "status": "VACANT",
+      "price": 5500,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_G2_3",
+      "bed_number": 3,
+      "room_id": "room_G2",
+      "room_number": "G2",
+      "floor_number": 0,
+      "status": "VACANT",
+      "price": 5500,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_G2_4",
+      "bed_number": 4,
+      "room_id": "room_G2",
+      "room_number": "G2",
+      "floor_number": 0,
+      "status": "VACANT",
+      "price": 5500,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_101_1",
+      "bed_number": 1,
+      "room_id": "room_101",
+      "room_number": "101",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_101_2",
+      "bed_number": 2,
+      "room_id": "room_101",
+      "room_number": "101",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_101_3",
+      "bed_number": 3,
+      "room_id": "room_101",
+      "room_number": "101",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_101_4",
+      "bed_number": 4,
+      "room_id": "room_101",
+      "room_number": "101",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_102_1",
+      "bed_number": 1,
+      "room_id": "room_102",
+      "room_number": "102",
+      "floor_number": 1,
+      "status": "OCCUPIED",
+      "price": 5000,
+      "current_resident_id": "RES-5298",
+      "current_resident_name": "Patel Aaliya "
+    },
+    {
+      "id": "bed_102_2",
+      "bed_number": 2,
+      "room_id": "room_102",
+      "room_number": "102",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 5000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_102_3",
+      "bed_number": 3,
+      "room_id": "room_102",
+      "room_number": "102",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 5000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_102_4",
+      "bed_number": 4,
+      "room_id": "room_102",
+      "room_number": "102",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 5000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_103_1",
+      "bed_number": 1,
+      "room_id": "room_103",
+      "room_number": "103",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_103_2",
+      "bed_number": 2,
+      "room_id": "room_103",
+      "room_number": "103",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_103_3",
+      "bed_number": 3,
+      "room_id": "room_103",
+      "room_number": "103",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_103_4",
+      "bed_number": 4,
+      "room_id": "room_103",
+      "room_number": "103",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_104_1",
+      "bed_number": 1,
+      "room_id": "room_104",
+      "room_number": "104",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_104_2",
+      "bed_number": 2,
+      "room_id": "room_104",
+      "room_number": "104",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_104_3",
+      "bed_number": 3,
+      "room_id": "room_104",
+      "room_number": "104",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_104_4",
+      "bed_number": 4,
+      "room_id": "room_104",
+      "room_number": "104",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_105_1",
+      "bed_number": 1,
+      "room_id": "room_105",
+      "room_number": "105",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_105_2",
+      "bed_number": 2,
+      "room_id": "room_105",
+      "room_number": "105",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_105_3",
+      "bed_number": 3,
+      "room_id": "room_105",
+      "room_number": "105",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_105_4",
+      "bed_number": 4,
+      "room_id": "room_105",
+      "room_number": "105",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_106_1",
+      "bed_number": 1,
+      "room_id": "room_106",
+      "room_number": "106",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_106_2",
+      "bed_number": 2,
+      "room_id": "room_106",
+      "room_number": "106",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_106_3",
+      "bed_number": 3,
+      "room_id": "room_106",
+      "room_number": "106",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_106_4",
+      "bed_number": 4,
+      "room_id": "room_106",
+      "room_number": "106",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_107_1",
+      "bed_number": 1,
+      "room_id": "room_107",
+      "room_number": "107",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_107_2",
+      "bed_number": 2,
+      "room_id": "room_107",
+      "room_number": "107",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_107_3",
+      "bed_number": 3,
+      "room_id": "room_107",
+      "room_number": "107",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_107_4",
+      "bed_number": 4,
+      "room_id": "room_107",
+      "room_number": "107",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_108_1",
+      "bed_number": 1,
+      "room_id": "room_108",
+      "room_number": "108",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_108_2",
+      "bed_number": 2,
+      "room_id": "room_108",
+      "room_number": "108",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_108_3",
+      "bed_number": 3,
+      "room_id": "room_108",
+      "room_number": "108",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_108_4",
+      "bed_number": 4,
+      "room_id": "room_108",
+      "room_number": "108",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_109_1",
+      "bed_number": 1,
+      "room_id": "room_109",
+      "room_number": "109",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_109_2",
+      "bed_number": 2,
+      "room_id": "room_109",
+      "room_number": "109",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_109_3",
+      "bed_number": 3,
+      "room_id": "room_109",
+      "room_number": "109",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_109_4",
+      "bed_number": 4,
+      "room_id": "room_109",
+      "room_number": "109",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_110_1",
+      "bed_number": 1,
+      "room_id": "room_110",
+      "room_number": "110",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_110_2",
+      "bed_number": 2,
+      "room_id": "room_110",
+      "room_number": "110",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_110_3",
+      "bed_number": 3,
+      "room_id": "room_110",
+      "room_number": "110",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_110_4",
+      "bed_number": 4,
+      "room_id": "room_110",
+      "room_number": "110",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 3000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    },
+    {
+      "id": "bed_102_5",
+      "bed_number": 5,
+      "room_id": "room_102",
+      "room_number": "102",
+      "floor_number": 1,
+      "status": "VACANT",
+      "price": 5000,
+      "current_resident_id": null,
+      "current_resident_name": null
+    }
+  ],
+  "residents": [
+    {
+      "id": "RES-5298",
+      "name": "Patel Aaliya ",
+      "photo_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+      "phone": "9985577866",
+      "whatsapp": "9985577866",
+      "email": "",
+      "college": "",
+      "course": "",
+      "academic_year": "2nd Year",
+      "date_of_birth": "2004-01-01",
+      "parent_name": "",
+      "parent_phone": "",
+      "emergency_contact": "",
+      "permanent_address": "",
+      "joining_date": "2026-08-25",
+      "current_room_id": "room_102",
+      "current_room_number": "102",
+      "current_bed_id": "bed_102_1",
+      "current_bed_number": 1,
+      "floor_number": 1,
+      "sharing_type": "5-Sharing",
+      "monthly_fee": 5000,
+      "status": "ACTIVE",
+      "vacated_date": null,
+      "vacated_reason": null,
+      "kyc_status": "PENDING",
+      "kyc_completion": 30,
+      "created_at": "2026-08-25T06:21:34.854Z",
+      "updated_at": "2026-08-25T06:21:34.854Z"
+    },
+    {
+      "id": "RES-3930",
+      "name": "Rakesh",
+      "photo_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+      "phone": "9063033887",
+      "whatsapp": "9063033887",
+      "email": "",
+      "college": "",
+      "course": "",
+      "academic_year": "2nd Year",
+      "date_of_birth": "2004-01-01",
+      "parent_name": "",
+      "parent_phone": "",
+      "emergency_contact": "",
+      "permanent_address": "",
+      "joining_date": "2026-08-25",
+      "current_room_id": "room_G1",
+      "current_room_number": "G1",
+      "current_bed_id": "bed_G1_4",
+      "current_bed_number": 4,
+      "floor_number": 0,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "ACTIVE",
+      "vacated_date": null,
+      "vacated_reason": null,
+      "kyc_status": "PENDING",
+      "kyc_completion": 30,
+      "created_at": "2026-08-25T06:14:40.860Z",
+      "updated_at": "2026-08-25T06:14:40.860Z"
+    },
+    {
+      "id": "RES-3726",
+      "name": "Amith",
+      "photo_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+      "phone": "9346571357",
+      "whatsapp": "9346571357",
+      "email": "",
+      "college": "",
+      "course": "",
+      "academic_year": "2nd Year",
+      "date_of_birth": "2004-01-01",
+      "parent_name": "",
+      "parent_phone": "",
+      "emergency_contact": "",
+      "permanent_address": "",
+      "joining_date": "2026-08-25",
+      "current_room_id": "room_G1",
+      "current_room_number": "G1",
+      "current_bed_id": "bed_G1_3",
+      "current_bed_number": 3,
+      "floor_number": 0,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "ACTIVE",
+      "vacated_date": null,
+      "vacated_reason": null,
+      "kyc_status": "PENDING",
+      "kyc_completion": 30,
+      "created_at": "2026-08-25T06:14:19.421Z",
+      "updated_at": "2026-08-25T06:14:19.421Z"
+    },
+    {
+      "id": "RES-8403",
+      "name": "sandeep",
+      "photo_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+      "phone": "7981372880",
+      "whatsapp": "7981372880",
+      "email": "",
+      "college": "",
+      "course": "",
+      "academic_year": "2nd Year",
+      "date_of_birth": "2004-01-01",
+      "parent_name": "",
+      "parent_phone": "",
+      "emergency_contact": "",
+      "permanent_address": "",
+      "joining_date": "2026-08-25",
+      "current_room_id": "room_G1",
+      "current_room_number": "G1",
+      "current_bed_id": "bed_G1_2",
+      "current_bed_number": 2,
+      "floor_number": 0,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "ACTIVE",
+      "vacated_date": null,
+      "vacated_reason": null,
+      "kyc_status": "PENDING",
+      "kyc_completion": 30,
+      "created_at": "2026-08-25T06:13:30.227Z",
+      "updated_at": "2026-08-25T06:13:30.227Z"
+    },
+    {
+      "id": "RES-1679",
+      "name": "Sathwik",
+      "photo_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80",
+      "phone": "9515770855",
+      "whatsapp": "9515770855",
+      "email": "palasathwik95@gmail.com",
+      "college": "",
+      "course": "",
+      "academic_year": "2nd Year",
+      "date_of_birth": "2004-01-01",
+      "parent_name": "",
+      "parent_phone": "",
+      "emergency_contact": "",
+      "permanent_address": "",
+      "joining_date": "2026-08-25",
+      "current_room_id": "room_G1",
+      "current_room_number": "G1",
+      "current_bed_id": "bed_G1_1",
+      "current_bed_number": 1,
+      "floor_number": 0,
+      "sharing_type": "4-Sharing",
+      "monthly_fee": 5500,
+      "status": "ACTIVE",
+      "vacated_date": null,
+      "vacated_reason": null,
+      "kyc_status": "PENDING",
+      "kyc_completion": 30,
+      "created_at": "2026-08-25T06:12:49.652Z",
+      "updated_at": "2026-08-25T06:12:49.652Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "PAY-1787638908140",
+      "resident_id": "RES-5298",
+      "resident_name": "Patel Aaliya ",
+      "room_id": "room_102",
+      "room_number": "102",
+      "month": "2026-08",
+      "expected_amount": 5000,
+      "amount_paid": 5000,
+      "advance_used": 0,
+      "balance": 0,
+      "payment_date": "2026-08-25T06:21:48.140Z",
+      "payment_method": "UPI",
+      "transaction_reference": "REF-907399",
+      "notes": "Monthly rent fee collection",
+      "recorded_by": "Sathwik Pala (Director)",
+      "created_at": "2026-08-25T06:21:48.140Z"
+    },
+    {
+      "id": "PAY-1787639142263",
+      "resident_id": "RES-3930",
+      "resident_name": "Rakesh",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "month": "2026-08",
+      "expected_amount": 5500,
+      "amount_paid": 5500,
+      "advance_used": 0,
+      "balance": 0,
+      "payment_date": "2026-08-25T06:25:42.263Z",
+      "payment_method": "UPI",
+      "transaction_reference": "UPI-139166",
+      "notes": "Monthly rent fee collection",
+      "recorded_by": "Sathwik Pala (Director)",
+      "created_at": "2026-08-25T06:25:42.263Z"
+    },
+    {
+      "id": "PAY-1787639517100",
+      "resident_id": "RES-3726",
+      "resident_name": "Amith",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "month": "2026-08",
+      "expected_amount": 5500,
+      "amount_paid": 5000,
+      "advance_used": 0,
+      "balance": 500,
+      "payment_date": "2026-08-25T06:31:57.100Z",
+      "payment_method": "UPI",
+      "transaction_reference": "UPI-509824",
+      "notes": "Monthly rent fee collection",
+      "recorded_by": "Sathwik Pala (Director)",
+      "created_at": "2026-08-25T06:31:57.100Z"
+    }
+  ],
   "advances": [],
   "expenses": [],
   "staff": [],
@@ -31,8 +2366,103 @@
   "maintenance_requests": [],
   "complaints": [],
   "resident_documents": [],
-  "room_assignments": [],
-  "whatsapp_messages": [],
+  "room_assignments": [
+    {
+      "id": "ASN-RES-1679-1787638369652",
+      "resident_id": "RES-1679",
+      "resident_name": "Sathwik",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "bed_id": "bed_G1_1",
+      "bed_number": 1,
+      "start_date": "2026-08-25",
+      "end_date": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "ASN-RES-8403-1787638410227",
+      "resident_id": "RES-8403",
+      "resident_name": "sandeep",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "bed_id": "bed_G1_2",
+      "bed_number": 2,
+      "start_date": "2026-08-25",
+      "end_date": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "ASN-RES-3726-1787638459421",
+      "resident_id": "RES-3726",
+      "resident_name": "Amith",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "bed_id": "bed_G1_3",
+      "bed_number": 3,
+      "start_date": "2026-08-25",
+      "end_date": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "ASN-RES-3930-1787638480860",
+      "resident_id": "RES-3930",
+      "resident_name": "Rakesh",
+      "room_id": "room_G1",
+      "room_number": "G1",
+      "bed_id": "bed_G1_4",
+      "bed_number": 4,
+      "start_date": "2026-08-25",
+      "end_date": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "ASN-RES-5298-1787638894854",
+      "resident_id": "RES-5298",
+      "resident_name": "Patel Aaliya ",
+      "room_id": "room_102",
+      "room_number": "102",
+      "bed_id": "bed_102_1",
+      "bed_number": 1,
+      "start_date": "2026-08-25",
+      "end_date": null,
+      "status": "ACTIVE"
+    }
+  ],
+  "whatsapp_messages": [
+    {
+      "id": "WA-1787639721191-931",
+      "resident_id": "RES-8403",
+      "resident_name": "sandeep",
+      "phone": "7981372880",
+      "message_type": "PAYMENT_REMINDER",
+      "template_name": "payment_reminder_template",
+      "message_content": "🌟 *HANURA CASA LUXURY LIVING - FEE REMINDER*\n\nDear *sandeep* (Room G1 (Bed 2)),\n\nThis is a gentle reminder regarding your monthly hostel fee for *August 2026*.\n\n📊 *Fee Details:*\n• Total Monthly Rent: *₹5,500*\n• Amount Paid: *₹0*\n• *Outstanding Balance Due: ₹5,500*\n\n💳 *Pay Instantly via UPI:*\nUPI ID: *hanuracasa@icici*\n\nKindly clear the pending balance to avoid any late fees. If you have already paid, please share the transaction screenshot.\n\n_Thank you,_\n*Management Office, Hanura Casa Luxury Living*",
+      "sent_at": "2026-08-25T06:35:21.191Z",
+      "status": "DELIVERED"
+    },
+    {
+      "id": "WA-1787638934556-372",
+      "resident_id": "RES-3726",
+      "resident_name": "Amith",
+      "phone": "9346571357",
+      "message_type": "PAYMENT_REMINDER",
+      "template_name": "payment_reminder_template",
+      "message_content": "🌟 *HANURA CASA LUXURY LIVING - FEE REMINDER*\n\nDear *Amith* (Room G1 (Bed 3)),\n\nThis is a gentle reminder regarding your monthly hostel fee for *August 2026*.\n\n📊 *Fee Details:*\n• Total Monthly Rent: *₹5,500*\n• Amount Paid: *₹0*\n• *Outstanding Balance Due: ₹5,500*\n\n💳 *Pay Instantly via UPI:*\nUPI ID: *hanuracasa@icici*\n\nKindly clear the pending balance to avoid any late fees. If you have already paid, please share the transaction screenshot.\n\n_Thank you,_\n*Management Office, Hanura Casa Luxury Living*",
+      "sent_at": "2026-08-25T06:22:14.556Z",
+      "status": "DELIVERED"
+    },
+    {
+      "id": "WA-1787638819166-553",
+      "resident_id": "RES-1679",
+      "resident_name": "Sathwik",
+      "phone": "9515770855",
+      "message_type": "PAYMENT_REMINDER",
+      "template_name": "payment_reminder_template",
+      "message_content": "🌟 *HANURA CASA LUXURY LIVING - FEE REMINDER*\n\nDear *Sathwik* (Room G1 (Bed 1)),\n\nThis is a gentle reminder regarding your monthly hostel fee for *August 2026*.\n\n📊 *Fee Details:*\n• Total Monthly Rent: *₹5,500*\n• Amount Paid: *₹0*\n• *Outstanding Balance Due: ₹5,500*\n\n💳 *Pay Instantly via UPI:*\nUPI ID: *hanuracasa@icici*\n\nKindly clear the pending balance to avoid any late fees. If you have already paid, please share the transaction screenshot.\n\n_Thank you,_\n*Management Office, Hanura Casa Luxury Living*",
+      "sent_at": "2026-08-25T06:20:19.166Z",
+      "status": "DELIVERED"
+    }
+  ],
   "notifications": [
     {
       "id": "NOTIF-INIT",
@@ -45,6 +2475,132 @@
   ],
   "audit_logs": [
     {
+      "id": "LOG-1787638758649",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_110",
+      "details": "Created Suite 110 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.649Z"
+    },
+    {
+      "id": "LOG-1787638758648-109",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_109",
+      "details": "Created Suite 109 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.648Z"
+    },
+    {
+      "id": "LOG-1787638758648-108",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_108",
+      "details": "Created Suite 108 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.648Z"
+    },
+    {
+      "id": "LOG-1787638758647-107",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_107",
+      "details": "Created Suite 107 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.647Z"
+    },
+    {
+      "id": "LOG-1787638758647-106",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_106",
+      "details": "Created Suite 106 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.647Z"
+    },
+    {
+      "id": "LOG-1787638758646-105",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_105",
+      "details": "Created Suite 105 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.646Z"
+    },
+    {
+      "id": "LOG-1787638758646-104",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_104",
+      "details": "Created Suite 104 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.646Z"
+    },
+    {
+      "id": "LOG-1787638758645-103",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_103",
+      "details": "Created Suite 103 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.645Z"
+    },
+    {
+      "id": "LOG-1787638758645-102",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_102",
+      "details": "Created Suite 102 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.645Z"
+    },
+    {
+      "id": "LOG-1787638758644-101",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_101",
+      "details": "Created Suite 101 on Floor 1 with 4 beds at ₹3000/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.644Z"
+    },
+    {
+      "id": "LOG-1787638758644-fl1",
+      "action": "FLOOR_CREATED",
+      "entity_type": "FLOOR",
+      "entity_id": "floor_1",
+      "details": "Created Floor 1 (Floor 1)",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:19:18.644Z"
+    },
+    {
+      "id": "LOG-1787638119721",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_G2",
+      "details": "Created Suite G2 on Floor 0 with 4 beds at ₹5500/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:08:39.721Z"
+    },
+    {
+      "id": "LOG-1787638113139",
+      "action": "ROOM_CREATED",
+      "entity_type": "ROOM",
+      "entity_id": "room_G1",
+      "details": "Created Suite G1 on Floor 0 with 4 beds at ₹5500/mo",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:08:33.139Z"
+    },
+    {
+      "id": "LOG-1787638113138",
+      "action": "FLOOR_CREATED",
+      "entity_type": "FLOOR",
+      "entity_id": "floor_0",
+      "details": "Created Floor 0 (Ground Floor)",
+      "admin_user": "Sathwik Pala (Director)",
+      "timestamp": "2026-08-25T06:08:33.138Z"
+    },
+    {
       "id": "LOG-INIT",
       "action": "SYSTEM_INITIALIZED",
       "entity_type": "SYSTEM",
@@ -52,6 +2608,105 @@
       "details": "Database reset to clean production state for fresh live usage.",
       "admin_user": "Sathwik Pala",
       "timestamp": "2026-08-24T08:57:00.000Z"
+    },
+    {
+      "id": "AUD-1787638369652",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "ADD_RESIDENT",
+      "entity_type": "RESIDENT",
+      "entity_id": "RES-1679",
+      "details": "Created new resident Sathwik assigned to Room G1.",
+      "timestamp": "2026-08-25T06:12:49.652Z"
+    },
+    {
+      "id": "AUD-1787638410227",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "ADD_RESIDENT",
+      "entity_type": "RESIDENT",
+      "entity_id": "RES-8403",
+      "details": "Created new resident sandeep assigned to Room G1.",
+      "timestamp": "2026-08-25T06:13:30.227Z"
+    },
+    {
+      "id": "AUD-1787638459421",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "ADD_RESIDENT",
+      "entity_type": "RESIDENT",
+      "entity_id": "RES-3726",
+      "details": "Created new resident Amith assigned to Room G1.",
+      "timestamp": "2026-08-25T06:14:19.421Z"
+    },
+    {
+      "id": "AUD-1787638480860",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "ADD_RESIDENT",
+      "entity_type": "RESIDENT",
+      "entity_id": "RES-3930",
+      "details": "Created new resident Rakesh assigned to Room G1.",
+      "timestamp": "2026-08-25T06:14:40.860Z"
+    },
+    {
+      "id": "AUD-1787638819166",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "WHATSAPP_BROADCAST",
+      "entity_type": "WHATSAPP",
+      "entity_id": "BATCH-1787638819166",
+      "details": "Sent PAYMENT_REMINDER to 1 resident(s). (Delivered: 1, Failed: 0)",
+      "timestamp": "2026-08-25T06:20:19.166Z"
+    },
+    {
+      "id": "AUD-1787638894854",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "ADD_RESIDENT",
+      "entity_type": "RESIDENT",
+      "entity_id": "RES-5298",
+      "details": "Created new resident Patel Aaliya  assigned to Room 102.",
+      "timestamp": "2026-08-25T06:21:34.854Z"
+    },
+    {
+      "id": "AUD-1787638908140",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "RECORD_PAYMENT",
+      "entity_type": "PAYMENT",
+      "entity_id": "PAY-1787638908140",
+      "details": "Recorded ₹5,000 payment from Patel Aaliya  for 2026-08. (Balance: ₹0)",
+      "timestamp": "2026-08-25T06:21:48.140Z"
+    },
+    {
+      "id": "AUD-1787638934557",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "WHATSAPP_BROADCAST",
+      "entity_type": "WHATSAPP",
+      "entity_id": "BATCH-1787638934557",
+      "details": "Sent PAYMENT_REMINDER to 1 resident(s). (Delivered: 1, Failed: 0)",
+      "timestamp": "2026-08-25T06:22:14.557Z"
+    },
+    {
+      "id": "AUD-1787639142263",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "RECORD_PAYMENT",
+      "entity_type": "PAYMENT",
+      "entity_id": "PAY-1787639142263",
+      "details": "Recorded ₹5,500 payment from Rakesh for 2026-08. (Balance: ₹0)",
+      "timestamp": "2026-08-25T06:25:42.263Z"
+    },
+    {
+      "id": "AUD-1787639517100",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "RECORD_PAYMENT",
+      "entity_type": "PAYMENT",
+      "entity_id": "PAY-1787639517100",
+      "details": "Recorded ₹5,000 payment from Amith for 2026-08. (Balance: ₹500)",
+      "timestamp": "2026-08-25T06:31:57.100Z"
+    },
+    {
+      "id": "AUD-1787639721191",
+      "admin_user": "Sathwik Pala (Director)",
+      "action": "WHATSAPP_BROADCAST",
+      "entity_type": "WHATSAPP",
+      "entity_id": "BATCH-1787639721191",
+      "details": "Sent PAYMENT_REMINDER to 1 resident(s). (Delivered: 1, Failed: 0)",
+      "timestamp": "2026-08-25T06:35:21.191Z"
     }
   ]
 }

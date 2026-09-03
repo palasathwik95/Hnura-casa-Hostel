@@ -102,10 +102,14 @@ interface AppContextType {
   setTransferModalOpen: (open: boolean) => void;
   transferringResident: Resident | null;
   setTransferringResident: (r: Resident | null) => void;
+  transferResident: Resident | null;
+  closeTransferResidentModal: () => void;
   vacateModalOpen: boolean;
   setVacateModalOpen: (open: boolean) => void;
   vacatingResident: Resident | null;
   setVacatingResident: (r: Resident | null) => void;
+  vacateResidentTarget: Resident | null;
+  closeVacateResidentModal: () => void;
   uploadKYCModalOpen: boolean;
   setUploadKYCModalOpen: (open: boolean) => void;
   uploadKYCResident: Resident | null;
@@ -122,6 +126,8 @@ interface AppContextType {
   setPreselectedResidentForPayment: (r: Resident | null) => void;
   addExpenseModalOpen: boolean;
   setAddExpenseModalOpen: (open: boolean) => void;
+  addStaffModalOpen: boolean;
+  setAddStaffModalOpen: (open: boolean) => void;
 
   // Toast notifications
   toasts: Toast[];
@@ -131,11 +137,14 @@ interface AppContextType {
   // Actions
   refreshData: () => Promise<void>;
   recordPayment: (payload: any) => Promise<Payment>;
-  transferRoom: (residentId: string, payload: { new_room_id: string; new_bed_id: string; transfer_reason?: string }) => Promise<any>;
-  markResidentVacated: (residentId: string, payload: { vacated_reason?: string }) => Promise<Resident>;
+  transferRoom: (arg1: any, arg2?: any) => Promise<any>;
+  markResidentVacated: (arg1: any, arg2?: any) => Promise<Resident>;
+  vacateResident: (arg1: any, arg2?: any) => Promise<Resident>;
   createResident: (payload: any) => Promise<Resident>;
-  editResident: (id: string, payload: Partial<Resident>) => Promise<Resident>;
+  editResident: (arg1: any, arg2?: any) => Promise<Resident>;
+  updateResident: (arg1: any, arg2?: any) => Promise<Resident>;
   addExpense: (payload: Partial<Expense>) => Promise<Expense>;
+  createExpense: (payload: Partial<Expense>) => Promise<Expense>;
   deleteExpense: (id: string) => Promise<void>;
   uploadKYC: (payload: any) => Promise<ResidentDocument>;
   verifyKYC: (payload: { document_id: string; status: 'VERIFIED' | 'REJECTED'; rejection_reason?: string }) => Promise<ResidentDocument>;
@@ -155,7 +164,9 @@ interface AppContextType {
   createComplaint: (payload: Partial<Complaint>) => Promise<Complaint>;
   updateComplaint: (id: string, payload: Partial<Complaint>) => Promise<Complaint>;
   createMaintenance: (payload: Partial<MaintenanceRequest>) => Promise<MaintenanceRequest>;
-  updateMaintenance: (id: string, payload: Partial<MaintenanceRequest>) => Promise<MaintenanceRequest>;
+  createMaintenanceRequest: (payload: Partial<MaintenanceRequest>) => Promise<MaintenanceRequest>;
+  updateMaintenance: (arg1: any, arg2?: any) => Promise<MaintenanceRequest>;
+  updateMaintenanceStatus: (arg1: any, arg2?: any) => Promise<MaintenanceRequest>;
   createFloor: (payload: { floor_number: number; name?: string; description?: string }) => Promise<Floor>;
   deleteFloor: (floorId: string) => Promise<void>;
   createRoom: (payload: {
@@ -185,6 +196,7 @@ interface AppContextType {
 
   addStaff: (payload: Partial<Staff>) => Promise<Staff>;
   recordSalary: (payload: any) => Promise<SalaryPayment>;
+  disburseSalary: (payload: any) => Promise<SalaryPayment>;
   updateSettings: (payload: Partial<SystemSettings>) => Promise<SystemSettings>;
   resetDemoDatabase: () => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -258,6 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
   const [preselectedResidentForPayment, setPreselectedResidentForPayment] = useState<Resident | null>(null);
   const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false);
+  const [addStaffModalOpen, setAddStaffModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -326,8 +339,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // ACTION: Transfer Room
-  const transferRoom = async (residentId: string, payload: any) => {
+  const transferRoom = async (arg1: any, arg2?: any) => {
     try {
+      const residentId = typeof arg1 === 'string' ? arg1 : (arg1?.resident_id || arg1?.id);
+      const payload = typeof arg1 === 'object' && arg2 === undefined ? arg1 : (arg2 || {});
       const res = await api.transferRoom(residentId, payload);
       await refreshData();
       addToast('success', 'Room Transferred', 'Resident has been reassigned to the new room and bed successfully.');
@@ -339,8 +354,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // ACTION: Mark Resident Vacated
-  const markResidentVacated = async (residentId: string, payload: any) => {
+  const markResidentVacated = async (arg1: any, arg2?: any) => {
     try {
+      const residentId = typeof arg1 === 'string' ? arg1 : (arg1?.resident_id || arg1?.id);
+      const payload = typeof arg1 === 'object' && arg2 === undefined ? arg1 : (arg2 || {});
       const res = await api.markResidentVacated(residentId, payload);
       await refreshData();
       addToast('success', 'Resident Marked as Vacated', 'Bed released. All financial transaction history has been permanently preserved.');
@@ -365,9 +382,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // ACTION: Edit Resident
-  const editResident = async (id: string, payload: any) => {
+  const editResident = async (arg1: any, arg2?: any) => {
     try {
-      const res = await api.editResident(id, payload);
+      const residentId = typeof arg1 === 'string' ? arg1 : (arg1?.id || arg1?.resident_id);
+      const payload = typeof arg1 === 'object' && arg2 === undefined ? arg1 : (arg2 || {});
+      const res = await api.editResident(residentId, payload);
       await refreshData();
       addToast('success', 'Profile Updated', 'Resident profile changes saved successfully.');
       return res.data;
@@ -580,9 +599,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateMaintenance = async (id: string, payload: any) => {
+  const updateMaintenance = async (arg1: any, arg2?: any) => {
     try {
-      const res = await api.updateMaintenance(id, payload);
+      const reqId = typeof arg1 === 'string' ? arg1 : (arg1?.request_id || arg1?.id);
+      const payload = typeof arg1 === 'object' && arg2 === undefined ? arg1 : (arg2 || {});
+      const res = await api.updateMaintenance(reqId, payload);
       await refreshData();
       addToast('success', 'Maintenance Updated', `Work order status is now ${payload.status || 'Updated'}.`);
       return res.data;
@@ -822,10 +843,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTransferModalOpen,
         transferringResident,
         setTransferringResident,
+        transferResident: transferringResident,
+        closeTransferResidentModal: () => {
+          setTransferModalOpen(false);
+          setTransferringResident(null);
+        },
         vacateModalOpen,
         setVacateModalOpen,
         vacatingResident,
         setVacatingResident,
+        vacateResidentTarget: vacatingResident,
+        closeVacateResidentModal: () => {
+          setVacateModalOpen(false);
+          setVacatingResident(null);
+        },
         uploadKYCModalOpen,
         setUploadKYCModalOpen,
         uploadKYCResident,
@@ -840,6 +871,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setPreselectedResidentForPayment,
         addExpenseModalOpen,
         setAddExpenseModalOpen,
+        addStaffModalOpen,
+        setAddStaffModalOpen,
         toasts,
         addToast,
         removeToast,
@@ -847,9 +880,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recordPayment,
         transferRoom,
         markResidentVacated,
+        vacateResident: markResidentVacated,
         createResident,
         editResident,
+        updateResident: editResident,
         addExpense,
+        createExpense: addExpense,
         deleteExpense,
         uploadKYC,
         verifyKYC,
@@ -858,7 +894,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createComplaint,
         updateComplaint,
         createMaintenance,
+        createMaintenanceRequest: createMaintenance,
         updateMaintenance,
+        updateMaintenanceStatus: updateMaintenance,
         createFloor,
         deleteFloor,
         createRoom,
@@ -870,6 +908,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteBed,
         addStaff,
         recordSalary,
+        disburseSalary: recordSalary,
         updateSettings,
         resetDemoDatabase,
         clearAllData

@@ -18,11 +18,21 @@ import {
   Trash2,
   Send,
   Upload,
-  FileCheck,
-  ShieldCheck,
   Camera,
-  FileText
+  FileText,
+  Phone,
+  User,
+  HeartHandshake
 } from 'lucide-react';
+
+const AVATAR_PRESETS = [
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80'
+];
 
 // ==========================================
 // 1. ADD RESIDENT MODAL
@@ -44,17 +54,23 @@ export const AddResidentModal: React.FC = () => {
   const [course, setCourse] = useState('');
   const [academicYear, setAcademicYear] = useState('2nd Year');
   const [dob, setDob] = useState('');
+  const [collegeId, setCollegeId] = useState('');
+  
+  // Parents & Emergency Contacts
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [permanentAddress, setPermanentAddress] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
 
-  // Allocation
+  // Allocation & Picture
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [selectedBedNumber, setSelectedBedNumber] = useState<number>(1);
   const [monthlyFee, setMonthlyFee] = useState<number>(7500);
   const [initialAdvance, setInitialAdvance] = useState<number>(5000);
   const [photoUrl, setPhotoUrl] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const addPhotoInputRef = useRef<HTMLInputElement>(null);
 
   // Filter available rooms with at least 1 vacant bed
   const availableRooms = rooms.filter(r => r.vacant_beds_count > 0 && r.status !== 'MAINTENANCE');
@@ -74,6 +90,23 @@ export const AddResidentModal: React.FC = () => {
     }
   }, [selectedRoomId]);
 
+  const handlePhotoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('error', 'File Too Large', 'Please choose an image under 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setPhotoUrl(event.target.result as string);
+        addToast('success', 'Photo Selected', 'Profile picture preview updated.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (!addResidentModalOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +116,7 @@ export const AddResidentModal: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await createResident({
         name,
@@ -90,9 +124,11 @@ export const AddResidentModal: React.FC = () => {
         whatsapp: whatsapp || phone,
         email,
         college,
+        college_id: collegeId,
         course,
         academic_year: academicYear,
         date_of_birth: dob,
+        aadhaar_number: aadhaarNumber,
         parent_name: parentName,
         parent_phone: parentPhone,
         emergency_contact: emergencyContact,
@@ -110,16 +146,25 @@ export const AddResidentModal: React.FC = () => {
       setWhatsapp('');
       setEmail('');
       setCollege('');
+      setCollegeId('');
+      setCourse('');
+      setAadhaarNumber('');
+      setParentName('');
+      setParentPhone('');
+      setEmergencyContact('');
+      setPermanentAddress('');
       setSelectedRoomId('');
     } catch (err) {
       // handled
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 my-8">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 my-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] sticky top-0 bg-[#141414] z-10">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#FF1E9A]/15 text-[#FF1E9A] flex items-center justify-center border border-[#FF1E9A]/30">
               <UserPlus className="w-4 h-4" />
@@ -138,6 +183,68 @@ export const AddResidentModal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Section: Profile Picture */}
+          <div className="bg-[#0B0B0C] p-4 rounded-xl border border-white/[0.08] space-y-3">
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#FF1E9A] font-bold flex items-center space-x-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              <span>Student Profile Picture</span>
+            </h4>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="relative group">
+                <img
+                  src={photoUrl}
+                  alt="Student Preview"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-[#FF1E9A]/50 shadow-md"
+                />
+                <button
+                  type="button"
+                  onClick={() => addPhotoInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                  title="Upload from device"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-2 w-full">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={addPhotoInputRef}
+                    onChange={handlePhotoFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addPhotoInputRef.current?.click()}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-semibold border border-white/[0.1] transition-colors flex items-center space-x-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#0CC6FF]" />
+                    <span>Upload Image</span>
+                  </button>
+                  <span className="text-[10px] text-[#8E8E9F]">or select preset avatar below:</span>
+                </div>
+
+                <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+                  {AVATAR_PRESETS.map((preset, idx) => (
+                    <img
+                      key={idx}
+                      src={preset}
+                      alt={`Preset ${idx + 1}`}
+                      onClick={() => setPhotoUrl(preset)}
+                      className={`w-8 h-8 rounded-xl object-cover cursor-pointer border transition-all ${
+                        photoUrl === preset
+                          ? 'border-[#FF1E9A] scale-110 shadow-[0_0_10px_rgba(255,30,154,0.4)]'
+                          : 'border-white/[0.1] opacity-70 hover:opacity-100'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Section 1: Basic Profile */}
           <div className="space-y-2">
             <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#0CC6FF] font-bold">1. Personal & Contact Details</h4>
@@ -187,13 +294,88 @@ export const AddResidentModal: React.FC = () => {
                   className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#0CC6FF]"
                 />
               </div>
+
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Date of Birth</label>
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={e => setDob(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#0CC6FF]"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Section 2: College & Work */}
+          {/* Section 2: Parents & Emergency Contacts */}
+          <div className="space-y-2 pt-2 border-t border-white/[0.05] bg-[#0B0B0C]/60 p-3.5 rounded-xl border border-white/[0.08]">
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center space-x-1.5">
+              <HeartHandshake className="w-3.5 h-3.5" />
+              <span>2. Parents & Emergency Contacts</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Parent / Guardian Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ramesh Sharma"
+                  value={parentName}
+                  onChange={e => setParentName(e.target.value)}
+                  className="w-full bg-[#141414] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Parent Contact Phone</label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 9849012345"
+                  value={parentPhone}
+                  onChange={e => setParentPhone(e.target.value)}
+                  className="w-full bg-[#141414] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Emergency Contact Number</label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 9440123456 (Guardian / Relative)"
+                  value={emergencyContact}
+                  onChange={e => setEmergencyContact(e.target.value)}
+                  className="w-full bg-[#141414] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-rose-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Permanent Home Address</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Flat 302, Green Meadows, Hyderabad"
+                  value={permanentAddress}
+                  onChange={e => setPermanentAddress(e.target.value)}
+                  className="w-full bg-[#141414] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Resident Aadhaar Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1234 5678 9012"
+                  value={aadhaarNumber}
+                  onChange={e => setAadhaarNumber(e.target.value)}
+                  maxLength={16}
+                  className="w-full bg-[#141414] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: College & Work */}
           <div className="space-y-2 pt-2 border-t border-white/[0.05]">
-            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#6C4CFF] font-bold">2. Academic / Professional Details</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#6C4CFF] font-bold">3. Academic / Professional Details</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-[#8E8E9F] mb-1 font-medium">College / Employer</label>
                 <input
@@ -202,6 +384,16 @@ export const AddResidentModal: React.FC = () => {
                   value={college}
                   onChange={e => setCollege(e.target.value)}
                   className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">College / Student ID</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1601-22-733-045"
+                  value={collegeId}
+                  onChange={e => setCollegeId(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#6C4CFF]"
                 />
               </div>
               <div>
@@ -231,9 +423,9 @@ export const AddResidentModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 3: Room & Bed Allocation */}
+          {/* Section 4: Room & Bed Allocation */}
           <div className="space-y-2 pt-2 border-t border-white/[0.05]">
-            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#FF6F3C] font-bold">3. Room & Bed Allocation</h4>
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#FF6F3C] font-bold">4. Room & Bed Allocation</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-[#8E8E9F] mb-1 font-medium">Assign Room (Vacant Only) *</label>
@@ -269,7 +461,7 @@ export const AddResidentModal: React.FC = () => {
                 </select>
               </div>
 
-              <div className="sm:col-span-3">
+              <div>
                 <label className="block text-[#8E8E9F] mb-1 font-medium">Monthly Rent Fee (₹) *</label>
                 <input
                   type="number"
@@ -277,6 +469,16 @@ export const AddResidentModal: React.FC = () => {
                   onChange={e => setMonthlyFee(Number(e.target.value))}
                   className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-[#0CC6FF] font-mono font-bold focus:outline-none focus:border-[#0CC6FF]"
                   required
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Security Advance Deposit (₹)</label>
+                <input
+                  type="number"
+                  value={initialAdvance}
+                  onChange={e => setInitialAdvance(Number(e.target.value))}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-[#6C4CFF] font-mono font-bold focus:outline-none focus:border-[#6C4CFF]"
                 />
               </div>
             </div>
@@ -292,9 +494,10 @@ export const AddResidentModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold rounded-xl text-xs shadow-[0_0_20px_rgba(255,30,154,0.35)] hover:brightness-110 active:scale-95 transition-all"
+              disabled={isSubmitting}
+              className="px-6 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold rounded-xl text-xs shadow-[0_0_20px_rgba(255,30,154,0.35)] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
             >
-              Enroll & Confirm Check-In
+              {isSubmitting ? 'Enrolling...' : 'Enroll & Confirm Check-In'}
             </button>
           </div>
         </form>
@@ -334,8 +537,17 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
   const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
   const [college, setCollege] = useState('');
+  const [collegeId, setCollegeId] = useState('');
   const [course, setCourse] = useState('');
   const [monthlyFee, setMonthlyFee] = useState(6500);
+  const [parentName, setParentName] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [permanentAddress, setPermanentAddress] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const editPhotoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (resident) {
@@ -344,15 +556,40 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
       setWhatsapp(resident.whatsapp || resident.phone || '');
       setEmail(resident.email || '');
       setCollege(resident.college || '');
+      setCollegeId(resident.college_id || '');
       setCourse(resident.course || '');
       setMonthlyFee(resident.monthly_fee || 6500);
+      setParentName(resident.parent_name || '');
+      setParentPhone(resident.parent_phone || '');
+      setEmergencyContact(resident.emergency_contact || '');
+      setPermanentAddress(resident.permanent_address || '');
+      setAadhaarNumber(resident.aadhaar_number || '');
+      setPhotoUrl(resident.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80');
     }
   }, [resident]);
+
+  const handlePhotoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('error', 'File Too Large', 'Please choose an image under 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setPhotoUrl(event.target.result as string);
+        addToast('success', 'Photo Selected', 'Profile picture preview updated.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!isOpen || !resident) return null;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await updateResident({
         id: resident.id,
@@ -361,22 +598,31 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
         whatsapp,
         email,
         college,
+        college_id: collegeId,
         course,
-        monthly_fee: Number(monthlyFee)
+        monthly_fee: Number(monthlyFee),
+        parent_name: parentName,
+        parent_phone: parentPhone,
+        emergency_contact: emergencyContact,
+        permanent_address: permanentAddress,
+        aadhaar_number: aadhaarNumber,
+        photo_url: photoUrl
       });
       handleClose();
     } catch (err) {
       // handled
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+    <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
+      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 my-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] sticky top-0 bg-[#141414] z-10">
           <div>
             <h3 className="text-base font-heading font-bold text-white">Edit Resident Profile</h3>
-            <p className="text-[10px] text-[#8E8E9F] font-mono">{resident.id} • Room {resident.current_room_number}</p>
+            <p className="text-[10px] text-[#8E8E9F] font-mono">{resident.id} • Room {resident.current_room_number || 'Vacated'}</p>
           </div>
           <button onClick={handleClose} className="p-1.5 rounded-xl text-[#8E8E9F] hover:text-white hover:bg-white/[0.06] transition-colors">
             <X className="w-4 h-4" />
@@ -384,6 +630,55 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
         </div>
 
         <form onSubmit={handleUpdate} className="space-y-3.5 text-xs">
+          {/* Profile Picture Update Section */}
+          <div className="bg-[#0B0B0C] p-3.5 rounded-xl border border-white/[0.08] space-y-2.5">
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-[#FF1E9A] font-bold flex items-center space-x-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              <span>Update Profile Picture</span>
+            </h4>
+            <div className="flex items-center gap-3">
+              <img
+                src={photoUrl}
+                alt={name}
+                className="w-14 h-14 rounded-2xl object-cover border-2 border-[#FF1E9A]/50 shadow-md"
+              />
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={editPhotoInputRef}
+                    onChange={handlePhotoFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => editPhotoInputRef.current?.click()}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-semibold border border-white/[0.1] transition-colors flex items-center space-x-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#0CC6FF]" />
+                    <span>Upload New Photo</span>
+                  </button>
+                </div>
+                <div className="flex items-center space-x-1.5 overflow-x-auto pb-1">
+                  {AVATAR_PRESETS.map((preset, idx) => (
+                    <img
+                      key={idx}
+                      src={preset}
+                      alt={`Preset ${idx + 1}`}
+                      onClick={() => setPhotoUrl(preset)}
+                      className={`w-7 h-7 rounded-lg object-cover cursor-pointer border transition-all ${
+                        photoUrl === preset
+                          ? 'border-[#FF1E9A] scale-110 shadow-[0_0_8px_rgba(255,30,154,0.4)]'
+                          : 'border-white/[0.1] opacity-70 hover:opacity-100'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#8E8E9F] mb-1 font-medium">Full Name</label>
@@ -424,7 +719,7 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
                 required
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className="block text-[#8E8E9F] mb-1 font-medium">College / Employer</label>
               <input
                 type="text"
@@ -432,6 +727,79 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
                 onChange={e => setCollege(e.target.value)}
                 className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
               />
+            </div>
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">College / Student ID</label>
+              <input
+                type="text"
+                value={collegeId}
+                onChange={e => setCollegeId(e.target.value)}
+                placeholder="e.g. 1601-22-733-045"
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#6C4CFF]"
+              />
+            </div>
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">Course / Role</label>
+              <input
+                type="text"
+                value={course}
+                onChange={e => setCourse(e.target.value)}
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
+              />
+            </div>
+          </div>
+
+          {/* Parents & Emergency Contacts */}
+          <div className="space-y-2 pt-2 border-t border-white/[0.05]">
+            <h4 className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">Parents & Emergency Contacts</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Parent / Guardian Name</label>
+                <input
+                  type="text"
+                  value={parentName}
+                  onChange={e => setParentName(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Parent Phone</label>
+                <input
+                  type="tel"
+                  value={parentPhone}
+                  onChange={e => setParentPhone(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Emergency Contact</label>
+                <input
+                  type="tel"
+                  value={emergencyContact}
+                  onChange={e => setEmergencyContact(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-rose-400"
+                />
+              </div>
+              <div>
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Permanent Address</label>
+                <input
+                  type="text"
+                  value={permanentAddress}
+                  onChange={e => setPermanentAddress(e.target.value)}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[#8E8E9F] mb-1 font-medium">Resident Aadhaar Number</label>
+                <input
+                  type="text"
+                  value={aadhaarNumber}
+                  onChange={e => setAadhaarNumber(e.target.value)}
+                  placeholder="e.g. 1234 5678 9012"
+                  maxLength={16}
+                  className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
             </div>
           </div>
 
@@ -445,9 +813,10 @@ export const EditResidentModal: React.FC<EditResidentModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold rounded-xl text-xs hover:brightness-110 transition-all"
+              disabled={isSubmitting}
+              className="px-5 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold rounded-xl text-xs hover:brightness-110 transition-all disabled:opacity-50"
             >
-              Save Changes
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -721,218 +1090,7 @@ export const VacateResidentModal: React.FC<VacateModalProps> = ({
 };
 
 // ==========================================
-// 5. UPLOAD DIGITAL KYC MODAL
-// ==========================================
-export const UploadKYCModal: React.FC = () => {
-  const {
-    uploadKYCModalOpen,
-    setUploadKYCModalOpen,
-    uploadKYCResident,
-    setUploadKYCResident,
-    residents,
-    uploadKYC,
-    addToast
-  } = useApp();
-
-  const [selectedResidentId, setSelectedResidentId] = useState('');
-  const [docType, setDocType] = useState('AADHAAR');
-  const [docName, setDocName] = useState('');
-  const [docUrl, setDocUrl] = useState('');
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (uploadKYCResident) {
-      setSelectedResidentId(uploadKYCResident.id);
-    }
-  }, [uploadKYCResident]);
-
-  if (!uploadKYCModalOpen) return null;
-
-  const currentResident = residents.find(r => r.id === (uploadKYCResident?.id || selectedResidentId));
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setDocName(file.name);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      setFilePreview(result);
-      setDocUrl(result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentResident) {
-      addToast('error', 'Missing Resident', 'Please select a resident to attach this document to.');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const finalDocUrl = docUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-      const finalDocName = docName || `${docType}_Document_${currentResident.name.replace(/\s+/g, '_')}.pdf`;
-
-      await uploadKYC({
-        resident_id: currentResident.id,
-        document_type: docType,
-        document_name: finalDocName,
-        document_url: finalDocUrl
-      });
-
-      addToast('success', 'Document Uploaded', `${docType} document successfully added to vault.`);
-      setUploadKYCModalOpen(false);
-      setUploadKYCResident(null);
-      setFilePreview(null);
-      setDocUrl('');
-      setDocName('');
-    } catch (err) {
-      // handled
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 my-8">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#0CC6FF]/15 text-[#0CC6FF] flex items-center justify-center border border-[#0CC6FF]/30">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-heading font-bold text-white">Upload Digital KYC Document</h3>
-              <p className="text-[10px] text-[#8E8E9F] font-mono">Encrypted resident verification vault</p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setUploadKYCModalOpen(false);
-              setUploadKYCResident(null);
-            }}
-            className="p-1.5 rounded-xl text-[#8E8E9F] hover:text-white hover:bg-white/[0.06] transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleUploadSubmit} className="space-y-4 text-xs">
-          <div>
-            <label className="block text-[#8E8E9F] mb-1 font-medium">Target Resident *</label>
-            <select
-              value={selectedResidentId}
-              onChange={e => setSelectedResidentId(e.target.value)}
-              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#0CC6FF]"
-              required
-            >
-              <option value="">-- Choose Resident --</option>
-              {residents.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.name} ({r.id}) • Room {r.current_room_number || 'Vacated'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[#8E8E9F] mb-1 font-medium">Document Classification *</label>
-              <select
-                value={docType}
-                onChange={e => setDocType(e.target.value)}
-                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#FF1E9A]"
-              >
-                <option value="AADHAAR">Aadhaar Card (Front & Back)</option>
-                <option value="PAN">PAN Card</option>
-                <option value="COLLEGE_ID">College / University ID</option>
-                <option value="EMPLOYEE_ID">Company Employee ID</option>
-                <option value="PASSPORT">Passport / Driving License</option>
-                <option value="RENTAL_AGREEMENT">Signed Rental Agreement</option>
-                <option value="POLICE_VERIFICATION">Police Verification Slip</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[#8E8E9F] mb-1 font-medium">Document Title / Label</label>
-              <input
-                type="text"
-                placeholder="e.g. Aadhaar_Original_Scan"
-                value={docName}
-                onChange={e => setDocName(e.target.value)}
-                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#FF1E9A]"
-              />
-            </div>
-          </div>
-
-          {/* File Picker & Drag-Drop */}
-          <div>
-            <label className="block text-[#8E8E9F] mb-1 font-medium">Select Image / PDF File</label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*,application/pdf"
-              className="hidden"
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-white/[0.15] hover:border-[#0CC6FF]/50 bg-[#0B0B0C] rounded-2xl p-6 text-center cursor-pointer transition-all hover:bg-white/[0.02] group"
-            >
-              {filePreview ? (
-                <div className="space-y-2">
-                  <img
-                    src={filePreview}
-                    alt="Preview"
-                    className="max-h-36 mx-auto rounded-xl border border-white/[0.1] object-contain shadow-lg"
-                  />
-                  <p className="text-[11px] text-[#0CC6FF] font-mono">{docName}</p>
-                  <p className="text-[10px] text-[#8E8E9F]">Click to choose a different file</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="w-10 h-10 mx-auto rounded-xl bg-[#0CC6FF]/10 text-[#0CC6FF] flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <p className="text-xs font-semibold text-white">Click or drag & drop document here</p>
-                  <p className="text-[10px] text-[#8E8E9F]">Supports PNG, JPG, WEBP, or PDF scans (up to 10MB)</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-white/[0.08]">
-            <button
-              type="button"
-              onClick={() => {
-                setUploadKYCModalOpen(false);
-                setUploadKYCResident(null);
-              }}
-              className="px-4 py-2 bg-[#0B0B0C] text-[#8E8E9F] hover:text-white rounded-xl text-xs font-medium border border-white/[0.08] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="px-6 py-2 bg-gradient-to-r from-[#0CC6FF] to-[#6C4CFF] text-white font-bold rounded-xl text-xs shadow-[0_0_20px_rgba(12,198,255,0.35)] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
-            >
-              {isUploading ? 'Uploading...' : 'Save to KYC Vault'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 6. RECORD PAYMENT MODAL
+// 5. RECORD PAYMENT MODAL
 // ==========================================
 export const RecordPaymentModal: React.FC = () => {
   const {
@@ -1421,6 +1579,150 @@ export const ReceiptModal: React.FC = () => {
   const resident = residents.find(r => r.id === printReceiptPayment.resident_id);
 
   const handlePrint = () => {
+    try {
+      // Create or reuse an isolated print iframe to print without backdrop/dark theme artifacts
+      let printFrame = document.getElementById('receipt-print-iframe') as HTMLIFrameElement;
+      if (!printFrame) {
+        printFrame = document.createElement('iframe');
+        printFrame.id = 'receipt-print-iframe';
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '0px';
+        printFrame.style.height = '0px';
+        printFrame.style.border = 'none';
+        document.body.appendChild(printFrame);
+      }
+
+      const doc = printFrame.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Receipt - #${printReceiptPayment.id}</title>
+              <style>
+                @page { size: A4 portrait; margin: 12mm; }
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; color: #111827; background: #ffffff; }
+                .receipt-container { max-width: 650px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; box-sizing: border-box; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 20px; }
+                .logo-box { display: flex; align-items: center; gap: 12px; }
+                .brand-badge { background: #FF1E9A; color: white; padding: 6px 12px; border-radius: 8px; font-weight: 900; font-size: 14px; letter-spacing: 0.5px; }
+                .brand-title { font-size: 20px; font-weight: 800; margin: 0; color: #111827; letter-spacing: -0.5px; }
+                .brand-sub { font-size: 12px; color: #6b7280; margin: 2px 0 0 0; }
+                .receipt-meta { text-align: right; }
+                .status-badge { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; }
+                .receipt-id { font-size: 12px; color: #6b7280; margin: 4px 0 0 0; font-family: monospace; }
+                .details-grid { display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px; line-height: 1.6; }
+                .details-col { flex: 1; }
+                .details-col.right { text-align: right; }
+                .label { font-size: 10px; text-transform: uppercase; color: #9ca3af; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
+                .value-main { font-weight: 700; font-size: 16px; color: #111827; }
+                .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+                .table th { background: #f9fafb; text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #4b5563; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; letter-spacing: 0.5px; }
+                .table td { padding: 12px; border-bottom: 1px solid #f3f4f6; }
+                .amount-col { text-align: right; font-family: monospace; font-size: 14px; font-weight: 600; }
+                .total-row { background: #f0fdf4; font-weight: bold; }
+                .total-row td { color: #166534; font-size: 15px; border-top: 1px solid #bbf7d0; border-bottom: 2px solid #86efac; }
+                .balance-row { background: #fff1f2; font-weight: bold; }
+                .balance-row td { color: #9f1239; }
+                .footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e5e7eb; padding-top: 18px; margin-top: 12px; font-size: 11px; color: #6b7280; }
+                .stamp { border: 2px solid #059669; color: #059669; font-weight: 900; font-size: 10px; padding: 6px 14px; border-radius: 6px; transform: rotate(-3deg); letter-spacing: 1px; }
+              </style>
+            </head>
+            <body>
+              <div class="receipt-container">
+                <div class="header">
+                  <div class="logo-box">
+                    <div class="brand-badge">HM</div>
+                    <div>
+                      <h2 class="brand-title">HANURA CASA</h2>
+                      <p class="brand-sub">${settings?.hostel_name || 'Hanura Casa Smart Living'} • Official Payment Receipt</p>
+                    </div>
+                  </div>
+                  <div class="receipt-meta">
+                    <span class="status-badge">PAID & VERIFIED</span>
+                    <p class="receipt-id">#${printReceiptPayment.id}</p>
+                  </div>
+                </div>
+
+                <div class="details-grid">
+                  <div class="details-col">
+                    <div class="label">Received From:</div>
+                    <div class="value-main">${printReceiptPayment.resident_name}</div>
+                    <div>Resident ID: <strong>${printReceiptPayment.resident_id}</strong></div>
+                    <div>Room / Bed: <strong>Room ${printReceiptPayment.room_number || 'N/A'}</strong></div>
+                    ${resident?.phone ? `<div>Phone: ${resident.phone}</div>` : ''}
+                    ${resident?.college_id ? `<div>College ID: <strong>${resident.college_id}</strong></div>` : ''}
+                  </div>
+                  <div class="details-col right">
+                    <div class="label">Payment Details:</div>
+                    <div class="value-main">Month: ${printReceiptPayment.month}</div>
+                    <div>Date: <strong>${new Date(printReceiptPayment.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
+                    <div>Mode: <strong>${printReceiptPayment.payment_method}</strong></div>
+                    <div>Txn Ref: <strong>${printReceiptPayment.transaction_reference}</strong></div>
+                  </div>
+                </div>
+
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th style="text-align: right;">Amount (INR)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>Monthly Hostel Fee (${printReceiptPayment.month})</strong>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Accommodation, Mess, High-Speed Wi-Fi & Housekeeping</div>
+                      </td>
+                      <td class="amount-col">₹${printReceiptPayment.expected_amount.toLocaleString('en-IN')}</td>
+                    </tr>
+                    ${printReceiptPayment.advance_used > 0 ? `
+                    <tr>
+                      <td style="color: #ea580c;">Adjusted from Security Advance</td>
+                      <td class="amount-col" style="color: #ea580c;">-₹${printReceiptPayment.advance_used.toLocaleString('en-IN')}</td>
+                    </tr>
+                    ` : ''}
+                    <tr class="total-row">
+                      <td>Total Amount Paid (Received)</td>
+                      <td class="amount-col">₹${printReceiptPayment.amount_paid.toLocaleString('en-IN')}</td>
+                    </tr>
+                    ${printReceiptPayment.balance > 0 ? `
+                    <tr class="balance-row">
+                      <td>Outstanding Balance Due</td>
+                      <td class="amount-col">₹${printReceiptPayment.balance.toLocaleString('en-IN')}</td>
+                    </tr>
+                    ` : ''}
+                  </tbody>
+                </table>
+
+                <div class="footer">
+                  <div>
+                    <strong>${settings?.hostel_name || 'Hanura Casa Property Management'}</strong>
+                    <div>${settings?.address || 'Hyderabad, Telangana'}</div>
+                    <div>Printed on: ${new Date().toLocaleString('en-IN')}</div>
+                  </div>
+                  <div>
+                    <div class="stamp">PAID & VERIFIED</div>
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+        doc.close();
+        setTimeout(() => {
+          printFrame.contentWindow?.focus();
+          printFrame.contentWindow?.print();
+        }, 250);
+        return;
+      }
+    } catch (err) {
+      console.warn('Fallback print:', err);
+    }
     window.print();
   };
 
@@ -1437,8 +1739,8 @@ export const ReceiptModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#141414] border border-white/[0.1] text-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl my-8 print:m-0 print:p-0 print:shadow-none print:w-full print:bg-white print:text-black">
+    <div id="receipt-modal-backdrop" className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
+      <div id="receipt-print-card" className="bg-[#141414] border border-white/[0.1] text-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl my-8 print:m-0 print:p-0 print:shadow-none print:w-full print:bg-white print:text-black">
         {/* Header with Logo */}
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
           <div className="flex items-center space-x-2.5">
@@ -1704,6 +2006,192 @@ export const AddRoomModal: React.FC = () => {
               className="px-5 py-2 bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold rounded-xl hover:brightness-110 shadow-lg active:scale-95 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating...' : 'Create Suite'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// 11. ADD STAFF MODAL
+// ==========================================
+export const AddStaffModal: React.FC = () => {
+  const { addStaffModalOpen, setAddStaffModalOpen, addStaff, addToast } = useApp();
+
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState<'Warden' | 'Security' | 'Cook' | 'Cleaning' | 'Maintenance Tech' | 'Manager'>('Warden');
+  const [monthlySalary, setMonthlySalary] = useState<number>(18000);
+  const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [address, setAddress] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!addStaffModalOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) {
+      addToast('error', 'Incomplete Form', 'Please provide staff name and phone number.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await addStaff({
+        name: name.trim(),
+        phone: phone.trim(),
+        role,
+        monthly_salary: Number(monthlySalary),
+        salary: Number(monthlySalary),
+        joining_date: joiningDate,
+        emergency_contact: emergencyContact.trim(),
+        address: address.trim(),
+        status: 'ACTIVE'
+      });
+
+      // Reset form
+      setName('');
+      setPhone('');
+      setMonthlySalary(18000);
+      setEmergencyContact('');
+      setAddress('');
+      setAddStaffModalOpen(false);
+    } catch (err) {
+      // handled
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#6C4CFF]/15 text-[#6C4CFF] flex items-center justify-center border border-[#6C4CFF]/30">
+              <UserPlus className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-heading font-bold text-white">Add Staff Member</h3>
+              <p className="text-[10px] text-[#8E8E9F] font-mono">HR, Operations & Payroll Roster</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAddStaffModalOpen(false)}
+            className="p-1.5 rounded-xl text-[#8E8E9F] hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          <div>
+            <label className="block text-[#8E8E9F] mb-1 font-medium">Full Name *</label>
+            <input
+              type="text"
+              placeholder="e.g. Ramesh Reddy"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">Designation / Role *</label>
+              <select
+                value={role}
+                onChange={e => setRole(e.target.value as any)}
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
+              >
+                <option value="Warden">Hostel Warden</option>
+                <option value="Security">Security Guard</option>
+                <option value="Cook">Mess Chef / Cook</option>
+                <option value="Cleaning">Housekeeping & Cleaning</option>
+                <option value="Maintenance Tech">Maintenance / Electrician</option>
+                <option value="Manager">Property Manager</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">Monthly Salary (₹) *</label>
+              <input
+                type="number"
+                min="1000"
+                step="500"
+                value={monthlySalary}
+                onChange={e => setMonthlySalary(Number(e.target.value))}
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-[#6C4CFF]"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">Phone Number *</label>
+              <input
+                type="tel"
+                placeholder="+91 9876543210"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#6C4CFF]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[#8E8E9F] mb-1 font-medium">Joining Date</label>
+              <input
+                type="date"
+                value={joiningDate}
+                onChange={e => setJoiningDate(e.target.value)}
+                className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#6C4CFF]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[#8E8E9F] mb-1 font-medium">Emergency Contact / Alternate Phone</label>
+            <input
+              type="tel"
+              placeholder="+91 9988776655"
+              value={emergencyContact}
+              onChange={e => setEmergencyContact(e.target.value)}
+              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-[#6C4CFF]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#8E8E9F] mb-1 font-medium">Home Address / Identification</label>
+            <input
+              type="text"
+              placeholder="e.g. H.No 4-12, Madhapur, Hyderabad"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3.5 py-2 text-white focus:outline-none focus:border-[#6C4CFF]"
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-white/[0.08]">
+            <button
+              type="button"
+              onClick={() => setAddStaffModalOpen(false)}
+              className="px-4 py-2 bg-[#0B0B0C] text-[#8E8E9F] hover:text-white rounded-xl text-xs font-medium border border-white/[0.08] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 bg-gradient-to-r from-[#6C4CFF] to-[#0CC6FF] text-white font-bold rounded-xl text-xs shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isSubmitting ? 'Saving Staff...' : 'Add Staff Member'}
             </button>
           </div>
         </form>

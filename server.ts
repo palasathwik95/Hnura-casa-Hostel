@@ -68,6 +68,7 @@ async function startServer() {
         resident_id: req.params.id,
         new_room_id: req.body.new_room_id,
         new_bed_id: req.body.new_bed_id,
+        new_bed_number: req.body.new_bed_number,
         transfer_reason: req.body.transfer_reason,
         admin_user: req.body.admin_user
       });

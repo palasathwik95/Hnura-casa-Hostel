@@ -52,6 +52,13 @@ export interface DatabaseSchema {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'hanuradb.json');
 
+let idCounter = 0;
+export function generateUniqueId(prefix: string): string {
+  idCounter = (idCounter + 1) % 1000000;
+  const rand = Math.random().toString(36).substring(2, 8);
+  return `${prefix}-${Date.now()}-${idCounter}-${rand}`;
+}
+
 class DatabaseService {
   private data!: DatabaseSchema;
 
@@ -70,8 +77,39 @@ class DatabaseService {
         this.data = JSON.parse(fileContent);
         if (this.data && this.data.settings) {
           this.data.settings.whatsapp_api_configured = true;
+          this.data.settings.contact_phone = '+91 8882997700';
+          this.data.settings.whatsapp_phone_number_id = '8882997700';
         }
-        console.log('✅ Hanura Casa database loaded from persistent disk storage.');
+
+        // Automatic Deduplication Pass: Ensure all audit logs and notifications have globally unique keys
+        if (Array.isArray(this.data.audit_logs)) {
+          const seenIds = new Set<string>();
+          this.data.audit_logs = this.data.audit_logs.map((log, idx) => {
+            if (!log.id || seenIds.has(log.id)) {
+              const uniqueKey = `LOG-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
+              seenIds.add(uniqueKey);
+              return { ...log, id: uniqueKey };
+            }
+            seenIds.add(log.id);
+            return log;
+          });
+        }
+
+        if (Array.isArray(this.data.notifications)) {
+          const seenNotifIds = new Set<string>();
+          this.data.notifications = this.data.notifications.map((notif, idx) => {
+            if (!notif.id || seenNotifIds.has(notif.id)) {
+              const uniqueKey = `NOTIF-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
+              seenNotifIds.add(uniqueKey);
+              return { ...notif, id: uniqueKey };
+            }
+            seenNotifIds.add(notif.id);
+            return notif;
+          });
+        }
+
+        this.saveToDisk();
+        console.log('✅ Hanura Casa database loaded from persistent disk storage with verified unique keys.');
         return;
       } catch (err) {
         console.error('⚠️ Could not parse existing db file, reseeding fresh dataset...', err);
@@ -627,7 +665,7 @@ class DatabaseService {
     const expected = Number(paymentData.expected_amount || resident.monthly_fee);
     const balance = Math.max(0, expected - amountPaid - advanceUsed);
 
-    const paymentId = `PAY-${Date.now()}`;
+    const paymentId = generateUniqueId('PAY');
     const newPayment: Payment = {
       id: paymentId,
       resident_id: resident.id,
@@ -655,7 +693,7 @@ class DatabaseService {
       if (advAcc) {
         advAcc.current_advance = Math.max(0, advAcc.current_advance - advanceUsed);
         advAcc.transactions.push({
-          id: `ADV-TXN-${Date.now()}`,
+          id: generateUniqueId('ADV-TXN'),
           type: 'MONTHLY_ADJUSTMENT',
           amount: advanceUsed,
           date: newPayment.payment_date,
@@ -668,7 +706,7 @@ class DatabaseService {
 
     // Add immutable audit log
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: newPayment.recorded_by,
       action: 'RECORD_PAYMENT',
       entity_type: 'PAYMENT',
@@ -685,7 +723,8 @@ class DatabaseService {
   public transferRoom(data: {
     resident_id: string;
     new_room_id: string;
-    new_bed_id: string;
+    new_bed_id?: string;
+    new_bed_number?: number;
     transfer_reason?: string;
     admin_user?: string;
   }): { resident: Resident; old_room: Room | null; new_room: Room } {
@@ -695,8 +734,17 @@ class DatabaseService {
     const newRoom = this.data.rooms.find(r => r.id === data.new_room_id);
     if (!newRoom) throw new Error('Target room not found.');
 
-    const newBed = newRoom.beds.find(b => b.id === data.new_bed_id);
-    if (!newBed) throw new Error('Target bed not found in selected room.');
+    // Flexible bed lookup by ID or bed number or first vacant bed
+    let newBed = newRoom.beds.find(
+      b => (data.new_bed_id && b.id === data.new_bed_id) || 
+           (data.new_bed_number !== undefined && b.bed_number === Number(data.new_bed_number))
+    );
+
+    if (!newBed) {
+      newBed = newRoom.beds.find(b => b.status === 'VACANT');
+    }
+
+    if (!newBed) throw new Error(`No vacant bed available in Room ${newRoom.room_number}.`);
     if (newBed.status === 'OCCUPIED' && newBed.current_resident_id !== resident.id) {
       throw new Error(`Bed ${newBed.bed_number} in Room ${newRoom.room_number} is already occupied.`);
     }
@@ -771,7 +819,7 @@ class DatabaseService {
 
     // Create new room assignment history entry
     this.data.room_assignments.push({
-      id: `ASN-${resident.id}-${Date.now()}`,
+      id: generateUniqueId(`ASN-${resident.id}`),
       resident_id: resident.id,
       resident_name: resident.name,
       room_id: newRoom.id,
@@ -785,7 +833,7 @@ class DatabaseService {
 
     // Immutable audit log
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: data.admin_user || this.data.settings.admin_name,
       action: 'ROOM_TRANSFER',
       entity_type: 'RESIDENT',
@@ -858,7 +906,7 @@ class DatabaseService {
 
     // Audit log
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: data.admin_user || this.data.settings.admin_name,
       action: 'MARK_VACATED',
       entity_type: 'RESIDENT',
@@ -880,7 +928,7 @@ class DatabaseService {
     }
 
     const newExpense: Expense = {
-      id: `EXP-${Date.now()}`,
+      id: generateUniqueId('EXP'),
       category: expenseData.category || 'MISCELLANEOUS',
       subcategory: expenseData.subcategory || 'General',
       amount: Number(expenseData.amount),
@@ -897,7 +945,7 @@ class DatabaseService {
     this.data.expenses.unshift(newExpense);
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: newExpense.created_by,
       action: 'ADD_EXPENSE',
       entity_type: 'EXPENSE',
@@ -919,7 +967,7 @@ class DatabaseService {
     this.data.expenses.splice(index, 1);
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: adminUser || this.data.settings.admin_name,
       action: 'DELETE_EXPENSE',
       entity_type: 'EXPENSE',
@@ -973,9 +1021,11 @@ class DatabaseService {
       whatsapp: residentData.whatsapp || residentData.phone || '',
       email: residentData.email || '',
       college: residentData.college || '',
+      college_id: residentData.college_id || '',
       course: residentData.course || '',
       academic_year: residentData.academic_year || '1st Year',
       date_of_birth: residentData.date_of_birth || '2004-01-01',
+      aadhaar_number: residentData.aadhaar_number || '',
       parent_name: residentData.parent_name || '',
       parent_phone: residentData.parent_phone || '',
       emergency_contact: residentData.emergency_contact || '',
@@ -1016,7 +1066,7 @@ class DatabaseService {
 
       // Room assignment history
       this.data.room_assignments.push({
-        id: `ASN-${newResident.id}-${Date.now()}`,
+        id: generateUniqueId(`ASN-${newResident.id}`),
         resident_id: newResident.id,
         resident_name: newResident.name,
         room_id: room.id,
@@ -1035,7 +1085,7 @@ class DatabaseService {
     this.data.residents.unshift(newResident);
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: this.data.settings?.admin_name || 'Administrator',
       action: 'ADD_RESIDENT',
       entity_type: 'RESIDENT',
@@ -1069,7 +1119,7 @@ class DatabaseService {
     }
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: this.data.settings.admin_name,
       action: 'EDIT_RESIDENT',
       entity_type: 'RESIDENT',
@@ -1094,7 +1144,7 @@ class DatabaseService {
     if (!resident) throw new Error('Resident not found.');
 
     const newDoc: ResidentDocument = {
-      id: `DOC-${Date.now()}`,
+      id: generateUniqueId('DOC'),
       resident_id: resident.id,
       document_type: data.document_type,
       document_name: data.document_name,
@@ -1110,7 +1160,7 @@ class DatabaseService {
     this.recalculateResidentKYC(resident);
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: this.data.settings.admin_name,
       action: 'UPLOAD_KYC_DOC',
       entity_type: 'KYC_DOCUMENT',
@@ -1147,7 +1197,7 @@ class DatabaseService {
     }
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: doc.verified_by,
       action: 'VERIFY_KYC_DOC',
       entity_type: 'KYC_DOCUMENT',
@@ -1237,7 +1287,7 @@ class DatabaseService {
       }
 
       const msg: WhatsAppMessage = {
-        id: `WA-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateUniqueId('WA'),
         resident_id: resident.id,
         resident_name: resident.name,
         phone: resident.whatsapp || resident.phone,
@@ -1254,11 +1304,11 @@ class DatabaseService {
     });
 
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: this.data.settings.admin_name,
       action: 'WHATSAPP_BROADCAST',
       entity_type: 'WHATSAPP',
-      entity_id: `BATCH-${Date.now()}`,
+      entity_id: generateUniqueId('BATCH'),
       details: `Sent ${data.message_type} to ${data.resident_ids.length} resident(s). (Delivered: ${success}, Failed: ${failed})`,
       timestamp: new Date().toISOString()
     });
@@ -1267,22 +1317,41 @@ class DatabaseService {
     return { success_count: success, failed_count: failed, messages: resultMessages };
   }
 
-  // SIGNATURE FEATURE: ROOM PAYMENT MATRIX (Jan - Aug)
+  // SIGNATURE FEATURE: ROOM PAYMENT MATRIX
   public getRoomPaymentMatrix(roomId: string) {
-    const room = this.data.rooms.find(r => r.id === roomId);
+    const room = this.data.rooms.find(r => r.id === roomId || r.room_number === roomId);
     if (!room) throw new Error('Room not found');
 
     // Get all assignments for this room (current and historical)
-    const roomAssignments = this.data.room_assignments.filter(a => a.room_id === roomId);
+    const roomAssignments = this.data.room_assignments.filter(a => a.room_id === room.id || a.room_number === room.room_number);
     const residentIds = Array.from(new Set(roomAssignments.map(a => a.resident_id)));
 
-    // Also include current active occupants in this room
-    const currentResidents = this.data.residents.filter(r => r.current_room_id === roomId);
+    // Also include current active occupants in this room by room id or room number
+    const currentResidents = this.data.residents.filter(r => 
+      r.current_room_id === room.id || 
+      (r.current_room_number && r.current_room_number.toString() === room.room_number.toString())
+    );
     currentResidents.forEach(r => {
       if (!residentIds.includes(r.id)) residentIds.push(r.id);
     });
 
-    const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08'];
+    // Also check occupants assigned to beds in this room
+    if (room.beds) {
+      room.beds.forEach(b => {
+        if (b.current_resident_id && !residentIds.includes(b.current_resident_id)) {
+          residentIds.push(b.current_resident_id);
+        }
+      });
+    }
+
+    // Dynamic month range: ensure recent months + any month with payments
+    const standardMonths = ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
+    const paymentMonths = Array.from(new Set(this.data.payments.map(p => p.month))).filter(Boolean);
+    const allMonthsSet = new Set([...standardMonths, ...paymentMonths]);
+    const months = Array.from(allMonthsSet).sort();
+
+    // Default primary active month for fast ledger inspection (August 2026 or latest)
+    const activeLedgerMonth = months.includes('2026-08') ? '2026-08' : months[months.length - 1];
 
     const matrix = residentIds.map(resId => {
       const res = this.data.residents.find(r => r.id === resId);
@@ -1294,21 +1363,25 @@ class DatabaseService {
       let totalBalance = 0;
 
       months.forEach(m => {
-        const p = resPayments.find(pay => pay.month === m);
-        const paid = p ? p.amount_paid : 0;
-        const expected = res ? res.monthly_fee : 6000;
-        const bal = p ? p.balance : (res && res.status === 'ACTIVE' ? expected : 0);
+        const matchingPayments = resPayments.filter(pay => pay.month === m);
+        const paid = matchingPayments.reduce((sum, pay) => sum + (Number(pay.amount_paid) || 0), 0);
+        const expected = res ? res.monthly_fee : (room.monthly_fee || 6000);
+        const bal = matchingPayments.length > 0
+          ? Math.max(0, expected - paid)
+          : (res && res.status === 'ACTIVE' ? expected : 0);
 
         monthlyAmounts[m] = {
           paid,
           expected,
           balance: bal,
-          paymentId: p?.id
+          paymentId: matchingPayments[matchingPayments.length - 1]?.id
         };
 
         totalPaid += paid;
         totalBalance += bal;
       });
+
+      const activeMonthData = monthlyAmounts[activeLedgerMonth] || { paid: 0, balance: 0 };
 
       return {
         resident_id: resId,
@@ -1317,16 +1390,27 @@ class DatabaseService {
         bed_number: res?.current_bed_number || 'N/A',
         status: res?.status || 'VACATED',
         current_advance: adv?.current_advance || 0,
-        monthly_fee: res?.monthly_fee || 6000,
+        monthly_fee: res?.monthly_fee || room.monthly_fee || 6000,
         months: monthlyAmounts,
+        paid_amount: activeMonthData.paid,
+        due_balance: activeMonthData.balance,
+        active_month: activeLedgerMonth,
         total_paid: totalPaid,
         total_balance: totalBalance
       };
     });
 
+    // Sort matrix rows by bed number
+    matrix.sort((a, b) => {
+      const bedA = Number(a.bed_number) || 999;
+      const bedB = Number(b.bed_number) || 999;
+      return bedA - bedB;
+    });
+
     return {
       room,
       months,
+      active_month: activeLedgerMonth,
       matrix
     };
   }
@@ -1335,7 +1419,7 @@ class DatabaseService {
   public updateSettings(settings: Partial<SystemSettings>): SystemSettings {
     Object.assign(this.data.settings, settings);
     this.data.audit_logs.push({
-      id: `AUD-${Date.now()}`,
+      id: generateUniqueId('AUD'),
       admin_user: this.data.settings.admin_name,
       action: 'UPDATE_SETTINGS',
       entity_type: 'SETTINGS',
@@ -1350,7 +1434,7 @@ class DatabaseService {
   // COMPLAINT & MAINTENANCE CRUD
   public createComplaint(data: Partial<Complaint>): Complaint {
     const newComplaint: Complaint = {
-      id: `CMP-${Date.now()}`,
+      id: generateUniqueId('CMP'),
       resident_id: data.resident_id || 'RES-GUEST',
       resident_name: data.resident_name || 'Resident',
       room_number: data.room_number || '101',
@@ -1381,7 +1465,7 @@ class DatabaseService {
 
   public createMaintenance(data: Partial<MaintenanceRequest>): MaintenanceRequest {
     const newMnt: MaintenanceRequest = {
-      id: `MNT-${Date.now()}`,
+      id: generateUniqueId('MNT'),
       resident_id: data.resident_id,
       resident_name: data.resident_name,
       room_number: data.room_number || '101',
@@ -1415,17 +1499,20 @@ class DatabaseService {
 
   // STAFF & SALARY
   public addStaff(staffData: Partial<Staff>): Staff {
-    const newStaff: Staff = {
-      id: `STF-${Date.now()}`,
+    const salary = Number(staffData.monthly_salary || (staffData as any).salary || 18000);
+    const newStaff: any = {
+      id: generateUniqueId('STF'),
       name: staffData.name || 'New Staff',
       phone: staffData.phone || '',
       role: staffData.role || 'Cleaning',
       joining_date: staffData.joining_date || new Date().toISOString().split('T')[0],
-      monthly_salary: Number(staffData.monthly_salary || 18000),
-      status: 'ACTIVE',
+      monthly_salary: salary,
+      salary: salary,
+      salary_history: (staffData as any).salary_history || [],
+      status: staffData.status || 'ACTIVE',
       photo_url: staffData.photo_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      address: staffData.address,
-      emergency_contact: staffData.emergency_contact
+      address: staffData.address || '',
+      emergency_contact: staffData.emergency_contact || ''
     };
     this.data.staff.push(newStaff);
     this.saveToDisk();
@@ -1449,7 +1536,7 @@ class DatabaseService {
     const balance = Math.max(0, salary - paid - Number(data.deduction || 0));
 
     const newSal: SalaryPayment = {
-      id: `SAL-${Date.now()}`,
+      id: generateUniqueId('SAL'),
       staff_id: stf.id,
       staff_name: stf.name,
       staff_role: stf.role,
@@ -1461,7 +1548,7 @@ class DatabaseService {
       balance: balance,
       payment_date: new Date().toISOString(),
       payment_method: data.payment_method || 'Bank Transfer',
-      transaction_ref: data.transaction_ref || `SAL-TXN-${Date.now()}`,
+      transaction_ref: data.transaction_ref || generateUniqueId('SAL-TXN'),
       status: balance === 0 ? 'PAID' : 'PARTIAL'
     };
 
@@ -1469,7 +1556,7 @@ class DatabaseService {
 
     // Auto-record in expenses
     this.data.expenses.unshift({
-      id: `EXP-SAL-${Date.now()}`,
+      id: generateUniqueId('EXP-SAL'),
       category: 'SALARIES',
       subcategory: `Salary - ${stf.role}`,
       amount: paid,
@@ -1512,7 +1599,7 @@ class DatabaseService {
     this.data.floors.sort((a, b) => a.floor_number - b.floor_number);
 
     this.data.audit_logs.unshift({
-      id: `LOG-${Date.now()}`,
+      id: generateUniqueId('LOG'),
       action: 'FLOOR_CREATED',
       entity_type: 'FLOOR',
       entity_id: floorId,
@@ -1543,7 +1630,7 @@ class DatabaseService {
     this.data.floors.splice(floorIndex, 1);
 
     this.data.audit_logs.unshift({
-      id: `LOG-${Date.now()}`,
+      id: generateUniqueId('LOG'),
       action: 'FLOOR_DELETED',
       entity_type: 'FLOOR',
       entity_id: floorId,
@@ -1625,7 +1712,7 @@ class DatabaseService {
     this.recalculateFloorStats(floor.id);
 
     this.data.audit_logs.unshift({
-      id: `LOG-${Date.now()}`,
+      id: generateUniqueId('LOG'),
       action: 'ROOM_CREATED',
       entity_type: 'ROOM',
       entity_id: roomId,
@@ -1745,7 +1832,7 @@ class DatabaseService {
     this.recalculateFloorStats(room.floor_id);
 
     this.data.audit_logs.unshift({
-      id: `LOG-${Date.now()}`,
+      id: generateUniqueId('LOG'),
       action: 'ROOM_DELETED',
       entity_type: 'ROOM',
       entity_id: id,
@@ -1856,7 +1943,7 @@ class DatabaseService {
       whatsapp_messages: [],
       notifications: [
         {
-          id: `NOTIF-${Date.now()}`,
+          id: generateUniqueId('NOTIF'),
           title: 'System Initialized',
           message: 'All dummy records removed. Add your floors, rooms and beds in Settings.',
           type: 'SYSTEM',
@@ -1866,7 +1953,7 @@ class DatabaseService {
       ],
       audit_logs: [
         {
-          id: `LOG-${Date.now()}`,
+          id: generateUniqueId('LOG'),
           action: 'DATABASE_CLEARED',
           entity_type: 'SYSTEM',
           entity_id: 'ALL',

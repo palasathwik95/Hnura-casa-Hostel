@@ -8,10 +8,8 @@ import { Rooms } from './components/Rooms';
 import { Payments } from './components/Payments';
 import { Expenses } from './components/Expenses';
 import { Maintenance } from './components/Maintenance';
-import { Complaints } from './components/Complaints';
 import { StaffView } from './components/Staff';
 import { WhatsAppCenter } from './components/WhatsAppCenter';
-import { DigitalKYC } from './components/DigitalKYC';
 import { Reports } from './components/Reports';
 import { AuditLogs } from './components/AuditLogs';
 import { NotificationsView } from './components/NotificationsView';
@@ -22,11 +20,11 @@ import {
   EditResidentModal,
   TransferRoomModal,
   VacateResidentModal,
-  UploadKYCModal,
   RecordPaymentModal,
   AddExpenseModal,
   SearchModal,
-  ReceiptModal
+  ReceiptModal,
+  AddStaffModal
 } from './components/Modals';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
@@ -60,14 +58,10 @@ const MainLayout: React.FC = () => {
         return <Expenses />;
       case 'maintenance':
         return <Maintenance />;
-      case 'complaints':
-        return <Complaints />;
       case 'staff':
         return <StaffView />;
       case 'whatsapp':
         return <WhatsAppCenter />;
-      case 'kyc':
-        return <DigitalKYC />;
       case 'reports':
         return <Reports />;
       case 'audit_logs':
@@ -104,11 +98,11 @@ const MainLayout: React.FC = () => {
       <EditResidentModal />
       <TransferRoomModal />
       <VacateResidentModal />
-      <UploadKYCModal />
       <RecordPaymentModal />
       <AddExpenseModal />
       <SearchModal />
       <ReceiptModal />
+      <AddStaffModal />
 
       {/* Toast Notification Container */}
       <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">

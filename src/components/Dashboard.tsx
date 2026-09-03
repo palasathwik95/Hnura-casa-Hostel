@@ -11,7 +11,6 @@ import {
   Wallet,
   Wrench,
   MessageSquareWarning,
-  ShieldAlert,
   ArrowUpRight,
   ArrowDownRight,
   Send,
@@ -43,7 +42,7 @@ export const Dashboard: React.FC = () => {
     rooms,
     payments,
     expenses,
-    complaints,
+    staff,
     maintenanceRequests,
     setActiveTab,
     setSelectedResidentId,
@@ -115,13 +114,8 @@ export const Dashboard: React.FC = () => {
     return { resident: r, paid, expected: r.monthly_fee, balance };
   }).filter(item => item.balance > 0);
 
-  // Missing KYC residents
-  const missingKycResidents = activeResidents.filter(
-    r => r.kyc_status === 'NOT_STARTED' || r.kyc_status === 'PENDING' || r.kyc_status === 'SUBMITTED'
-  );
-
-  // Unresolved complaints
-  const openComplaints = complaints.filter(c => c.status === 'PENDING' || c.status === 'IN_PROGRESS');
+  // Unpaid staff for current month
+  const unpaidStaff = staff.filter(s => !s.salary_history.some(h => h.month === '2026-08'));
 
   // Pending maintenance
   const openMaintenance = maintenanceRequests.filter(m => m.status === 'PENDING' || m.status === 'IN_PROGRESS');
@@ -373,11 +367,11 @@ export const Dashboard: React.FC = () => {
             <h3 className="text-base font-heading font-bold text-white">Priority Action Queue & Triage</h3>
           </div>
           <span className="text-[10px] font-mono text-[#FF1E9A] border border-[#FF1E9A]/30 px-3 py-1 rounded-full uppercase tracking-widest font-bold">
-            {pendingResidents.length + missingKycResidents.length + openComplaints.length + openMaintenance.length} Pending Actions
+            {pendingResidents.length + unpaidStaff.length + openMaintenance.length} Pending Actions
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Overdue / Pending Fees */}
           <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
@@ -441,71 +435,28 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Missing / Pending KYC */}
+          {/* Staff Payroll Action Queue */}
           <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0CC6FF] flex items-center space-x-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-[#0CC6FF]" />
-                  <span>Pending KYC ({missingKycResidents.length})</span>
+                <span className="text-xs font-bold text-[#6C4CFF] flex items-center space-x-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#6C4CFF]" />
+                  <span>Pending Payroll ({unpaidStaff.length})</span>
                 </span>
-                <span className="text-[10px] font-mono text-[#8E8E9F]">Audit</span>
+                <span className="text-[10px] font-mono text-[#8E8E9F]">Aug 2026</span>
               </div>
               <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
-                {missingKycResidents.length === 0 ? (
-                  <p className="text-xs text-emerald-400 py-3 text-center">100% KYC Verified</p>
+                {unpaidStaff.length === 0 ? (
+                  <p className="text-xs text-emerald-400 py-3 text-center">All staff salaries paid</p>
                 ) : (
-                  missingKycResidents.slice(0, 3).map(res => (
-                    <div key={res.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
+                  unpaidStaff.slice(0, 3).map(stf => (
+                    <div key={stf.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="truncate pr-2">
-                        <p className="font-bold text-white truncate">{res.name}</p>
-                        <p className="text-[10px] text-[#FF6F3C] font-mono font-bold">{res.kyc_status}</p>
+                        <p className="font-bold text-white truncate">{stf.name}</p>
+                        <p className="text-[10px] text-[#8E8E9F] truncate">{stf.role}</p>
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedResidentId(res.id);
-                          setActiveTab('residents');
-                        }}
-                        className="px-2.5 py-1 bg-[#0CC6FF]/15 hover:bg-[#0CC6FF]/25 text-[#0CC6FF] rounded-lg text-[10px] font-bold transition-colors border border-[#0CC6FF]/30"
-                      >
-                        Inspect
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('kyc')}
-              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#0CC6FF] hover:text-white flex items-center justify-between w-full font-bold"
-            >
-              <span>Open KYC Center</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Unresolved Complaints */}
-          <div className="bg-[#0B0B0C] p-4 rounded-2xl border border-white/[0.06] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#FF6F3C] flex items-center space-x-1.5">
-                  <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF6F3C]" />
-                  <span>Open Complaints ({openComplaints.length})</span>
-                </span>
-                <span className="text-[10px] font-mono text-[#8E8E9F]">SLA</span>
-              </div>
-              <div className="mt-3 space-y-2 max-h-44 overflow-y-auto pr-1">
-                {openComplaints.length === 0 ? (
-                  <p className="text-xs text-emerald-400 py-3 text-center">Zero grievances active</p>
-                ) : (
-                  openComplaints.slice(0, 3).map(cmp => (
-                    <div key={cmp.id} className="p-2.5 bg-[#141414] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
-                      <div className="truncate pr-2">
-                        <p className="font-bold text-white truncate">{cmp.category} - Rm {cmp.room_number}</p>
-                        <p className="text-[10px] text-[#8E8E9F] truncate">{cmp.description}</p>
-                      </div>
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#FF6F3C]/15 text-[#FF6F3C] uppercase border border-[#FF6F3C]/30">
-                        {cmp.priority}
+                      <span className="text-[10px] font-mono font-bold text-emerald-400">
+                        ₹{(stf.salary || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                   ))
@@ -513,10 +464,10 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => setActiveTab('complaints')}
-              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#FF6F3C] hover:text-white flex items-center justify-between w-full font-bold"
+              onClick={() => setActiveTab('staff')}
+              className="mt-3 pt-2 border-t border-white/[0.06] text-xs text-[#6C4CFF] hover:text-white flex items-center justify-between w-full font-bold"
             >
-              <span>Manage Complaints</span>
+              <span>Staff & Payroll Center</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>

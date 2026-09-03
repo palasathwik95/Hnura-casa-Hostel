@@ -32,6 +32,7 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
     rooms,
     beds,
     residents,
+    payments,
     setPrintReceiptPayment,
     setSelectedResidentId,
     setActiveTab,
@@ -51,6 +52,8 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [paymentMatrixData, setPaymentMatrixData] = useState<any | null>(null);
   const [matrixLoading, setMatrixLoading] = useState(false);
+  const [selectedMatrixMonth, setSelectedMatrixMonth] = useState<string>('2026-08');
+  const [viewMode, setViewMode] = useState<'single' | 'full'>('single');
 
   // Sync selected floor if availableFloors changes
   useEffect(() => {
@@ -71,7 +74,7 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
     }
   }, [selectedFloor, rooms]);
 
-  // Load signature Room Payment Matrix whenever selected room changes
+  // Load signature Room Payment Matrix whenever selected room or payments/residents changes
   useEffect(() => {
     if (selectedRoom) {
       setMatrixLoading(true);
@@ -79,6 +82,9 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
         .getRoomPaymentMatrix(selectedRoom.id)
         .then(data => {
           setPaymentMatrixData(data);
+          if (data?.active_month && !selectedMatrixMonth) {
+            setSelectedMatrixMonth(data.active_month);
+          }
         })
         .catch(err => {
           console.error('Error fetching room payment matrix:', err);
@@ -89,7 +95,7 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
     } else {
       setPaymentMatrixData(null);
     }
-  }, [selectedRoom?.id]);
+  }, [selectedRoom?.id, payments, residents]);
 
   const handleSelectResident = (id: string) => {
     setSelectedResidentId(id);
@@ -373,64 +379,259 @@ export const Rooms: React.FC<RoomsProps> = ({ onSelectResident }) => {
               </div>
 
               {/* Room Payment Matrix History */}
-              {paymentMatrixData && paymentMatrixData.matrix && (
-                <div className="bg-[#141414] p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-xl">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-                    <div className="flex items-center space-x-2.5">
-                      <CreditCard className="w-4 h-4 text-[#0CC6FF]" />
+              <div className="bg-[#141414] p-5 sm:p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+                  <div className="flex items-center space-x-2.5">
+                    <CreditCard className="w-4 h-4 text-[#0CC6FF]" />
+                    <div>
                       <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
                         Suite {selectedRoom.room_number} Payment Ledger Matrix
                       </h4>
+                      <p className="text-[11px] text-[#8E8E9F]">
+                        Live bed-by-bed collection status & financial audit
+                      </p>
                     </div>
-                    <span className="text-xs text-[#8E8E9F] font-mono">Real-time ledger audit</span>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-white/[0.08] text-[10px] font-mono uppercase tracking-wider text-[#8E8E9F]">
-                          <th className="py-2.5 px-3">Bed</th>
-                          <th className="py-2.5 px-3">Resident</th>
-                          <th className="py-2.5 px-3">Status</th>
-                          <th className="py-2.5 px-3">Monthly Rent</th>
-                          <th className="py-2.5 px-3">August Paid</th>
-                          <th className="py-2.5 px-3">Balance Due</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.04] font-medium">
-                        {paymentMatrixData.matrix.map((row: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-white/[0.02]">
-                            <td className="py-2.5 px-3 font-mono text-white">Bed {row.bed_number}</td>
-                            <td className="py-2.5 px-3 text-white font-bold">{row.resident_name || 'Vacant'}</td>
-                            <td className="py-2.5 px-3">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                                  row.status === 'OCCUPIED'
-                                    ? 'bg-emerald-500/10 text-emerald-400'
-                                    : 'bg-white/[0.04] text-[#8E8E9F]'
-                                }`}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 font-mono">₹{(row.monthly_fee || 0).toLocaleString('en-IN')}</td>
-                            <td className="py-2.5 px-3 font-mono text-emerald-400 font-bold">
-                              ₹{(row.paid_amount || 0).toLocaleString('en-IN')}
-                            </td>
-                            <td className="py-2.5 px-3 font-mono font-bold">
-                              {row.due_balance > 0 ? (
-                                <span className="text-rose-400">₹{row.due_balance.toLocaleString('en-IN')} Due</span>
-                              ) : (
-                                <span className="text-emerald-400">Cleared</span>
-                              )}
-                            </td>
-                          </tr>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Month selector */}
+                    <div className="flex items-center space-x-1.5 bg-[#0B0B0C] px-2.5 py-1 rounded-xl border border-white/[0.08]">
+                      <span className="text-[10px] text-[#8E8E9F] uppercase font-mono font-bold">Month:</span>
+                      <select
+                        value={selectedMatrixMonth}
+                        onChange={e => setSelectedMatrixMonth(e.target.value)}
+                        className="bg-transparent text-xs text-white font-mono font-bold focus:outline-none cursor-pointer"
+                      >
+                        {(paymentMatrixData?.months || ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']).map((m: string) => (
+                          <option key={m} value={m} className="bg-[#141414] text-white">
+                            {m} {m === '2026-08' ? '(Current)' : ''}
+                          </option>
                         ))}
-                      </tbody>
-                    </table>
+                      </select>
+                    </div>
+
+                    {/* View mode toggle */}
+                    <div className="flex items-center bg-[#0B0B0C] p-0.5 rounded-xl border border-white/[0.08] text-[11px] font-medium">
+                      <button
+                        onClick={() => setViewMode('single')}
+                        className={`px-2.5 py-1 rounded-lg transition-colors ${
+                          viewMode === 'single'
+                            ? 'bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold'
+                            : 'text-[#8E8E9F] hover:text-white'
+                        }`}
+                      >
+                        Active Month
+                      </button>
+                      <button
+                        onClick={() => setViewMode('full')}
+                        className={`px-2.5 py-1 rounded-lg transition-colors ${
+                          viewMode === 'full'
+                            ? 'bg-gradient-to-r from-[#FF1E9A] to-[#6C4CFF] text-white font-bold'
+                            : 'text-[#8E8E9F] hover:text-white'
+                        }`}
+                      >
+                        Multi-Month Grid
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {matrixLoading && !paymentMatrixData ? (
+                  <div className="py-8 text-center text-xs text-[#8E8E9F] font-mono animate-pulse">
+                    Loading Room Suite Payment Ledger...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    {viewMode === 'single' ? (
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/[0.08] text-[10px] font-mono uppercase tracking-wider text-[#8E8E9F]">
+                            <th className="py-2.5 px-3">Bed</th>
+                            <th className="py-2.5 px-3">Resident</th>
+                            <th className="py-2.5 px-3">Status</th>
+                            <th className="py-2.5 px-3">Monthly Rent</th>
+                            <th className="py-2.5 px-3 font-bold text-white">{selectedMatrixMonth} Paid</th>
+                            <th className="py-2.5 px-3 font-bold text-white">{selectedMatrixMonth} Balance</th>
+                            <th className="py-2.5 px-3">Total Paid</th>
+                            <th className="py-2.5 px-3 text-right">Receipt</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.04] font-medium">
+                          {(paymentMatrixData?.matrix && paymentMatrixData.matrix.length > 0
+                            ? paymentMatrixData.matrix
+                            : selectedRoom.beds.map(b => {
+                                const occ = residents.find(r => r.id === b.current_resident_id);
+                                const resPays = payments.filter(p => p.resident_id === occ?.id);
+                                const curPay = resPays.find(p => p.month === selectedMatrixMonth);
+                                const paid = curPay ? curPay.amount_paid : 0;
+                                const monthlyFee = occ?.monthly_fee || selectedRoom.monthly_fee;
+                                const bal = occ ? Math.max(0, monthlyFee - paid) : 0;
+                                return {
+                                  bed_number: b.bed_number,
+                                  resident_id: occ?.id,
+                                  resident_name: occ?.name || (b.status === 'OCCUPIED' ? 'Occupied' : 'Vacant Bed'),
+                                  status: b.status,
+                                  monthly_fee: monthlyFee,
+                                  months: { [selectedMatrixMonth]: { paid, balance: bal } },
+                                  paid_amount: paid,
+                                  due_balance: bal,
+                                  total_paid: resPays.reduce((s, p) => s + p.amount_paid, 0),
+                                  total_balance: bal
+                                };
+                              })
+                          ).map((row: any, idx: number) => {
+                            // Dynamically calculate payments from live global context
+                            const matchingPayments = row.resident_id
+                              ? payments.filter(p => p.resident_id === row.resident_id && p.month === selectedMatrixMonth)
+                              : [];
+                            const liveMonthPaid = matchingPayments.reduce((s, p) => s + (Number(p.amount_paid) || 0), 0);
+                            const monthInfo = row.months?.[selectedMatrixMonth];
+                            const monthPaid = matchingPayments.length > 0 ? liveMonthPaid : (monthInfo?.paid || 0);
+                            const fee = Number(row.monthly_fee) || Number(selectedRoom.monthly_fee) || 6500;
+                            const hasResident = row.resident_id && row.status !== 'VACANT';
+                            const monthBal = hasResident ? Math.max(0, fee - monthPaid) : 0;
+
+                            const allResidentPayments = row.resident_id
+                              ? payments.filter(p => p.resident_id === row.resident_id)
+                              : [];
+                            const liveTotalPaid = allResidentPayments.reduce((s, p) => s + (Number(p.amount_paid) || 0), 0);
+                            const totalPaid = allResidentPayments.length > 0 ? liveTotalPaid : (row.total_paid || 0);
+
+                            // Find matching payment for receipt print
+                            const paymentRecord = payments.find(
+                              p => p.resident_id === row.resident_id && p.month === selectedMatrixMonth
+                            );
+
+                            return (
+                              <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="py-3 px-3 font-mono text-white font-bold">
+                                  Bed {row.bed_number}
+                                </td>
+                                <td className="py-3 px-3">
+                                  {hasResident ? (
+                                    <button
+                                      onClick={() => handleSelectResident(row.resident_id)}
+                                      className="text-left font-bold text-white hover:text-[#0CC6FF] transition-colors"
+                                    >
+                                      {row.resident_name}
+                                    </button>
+                                  ) : (
+                                    <span className="text-[#8E8E9F] italic">{row.resident_name || 'Vacant'}</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                      row.status === 'OCCUPIED'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-white/[0.04] text-[#8E8E9F] border border-white/[0.08]'
+                                    }`}
+                                  >
+                                    {row.status}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 font-mono text-[#8E8E9F]">
+                                  ₹{fee.toLocaleString('en-IN')}
+                                </td>
+                                <td className="py-3 px-3 font-mono font-bold">
+                                  <span className={monthPaid > 0 ? 'text-emerald-400' : 'text-[#8E8E9F]'}>
+                                    ₹{monthPaid.toLocaleString('en-IN')}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 font-mono font-bold">
+                                  {monthBal > 0 ? (
+                                    <span className="text-rose-400">₹{monthBal.toLocaleString('en-IN')} Due</span>
+                                  ) : hasResident ? (
+                                    <span className="text-emerald-400">Cleared</span>
+                                  ) : (
+                                    <span className="text-[#8E8E9F]">-</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 font-mono text-[#8E8E9F]">
+                                  ₹{totalPaid.toLocaleString('en-IN')}
+                                </td>
+                                <td className="py-3 px-3 text-right">
+                                  {paymentRecord ? (
+                                    <button
+                                      onClick={() => setPrintReceiptPayment(paymentRecord)}
+                                      title="Print Official Payment Receipt"
+                                      className="p-1.5 bg-[#0B0B0C] hover:bg-white/[0.08] text-[#FF1E9A] border border-white/[0.08] rounded-xl transition-colors inline-flex items-center space-x-1 text-[10px]"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                      <span className="hidden sm:inline">Receipt</span>
+                                    </button>
+                                  ) : (
+                                    <span className="text-[#8E8E9F] text-[10px] font-mono">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      /* Multi-Month Grid View */
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/[0.08] text-[10px] font-mono uppercase tracking-wider text-[#8E8E9F]">
+                            <th className="py-2.5 px-3 sticky left-0 bg-[#141414] z-10">Bed / Resident</th>
+                            {(paymentMatrixData?.months || ['2026-05', '2026-06', '2026-07', '2026-08']).map((m: string) => (
+                              <th key={m} className="py-2.5 px-3 font-mono text-center">
+                                {m}
+                              </th>
+                            ))}
+                            <th className="py-2.5 px-3 font-mono text-right">Total Paid</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.04] font-medium font-mono text-xs">
+                          {paymentMatrixData?.matrix?.map((row: any, idx: number) => {
+                            const resAllPayments = row.resident_id
+                              ? payments.filter(p => p.resident_id === row.resident_id)
+                              : [];
+                            const resTotalPaid = resAllPayments.length > 0
+                              ? resAllPayments.reduce((s, p) => s + (Number(p.amount_paid) || 0), 0)
+                              : (row.total_paid || 0);
+
+                            return (
+                              <tr key={idx} className="hover:bg-white/[0.02]">
+                                <td className="py-2.5 px-3 sticky left-0 bg-[#141414] z-10 whitespace-nowrap">
+                                  <span className="font-bold text-white">Bed {row.bed_number}</span>
+                                  <span className="text-[#8E8E9F] ml-2 text-[11px]">({row.resident_name})</span>
+                                </td>
+                                {(paymentMatrixData?.months || []).map((m: string) => {
+                                  const matchingCellPayments = row.resident_id
+                                    ? payments.filter(p => p.resident_id === row.resident_id && p.month === m)
+                                    : [];
+                                  const liveCellPaid = matchingCellPayments.reduce((s, p) => s + (Number(p.amount_paid) || 0), 0);
+                                  const cell = row.months?.[m];
+                                  const paid = matchingCellPayments.length > 0 ? liveCellPaid : (cell?.paid || 0);
+                                  const monthlyRent = Number(row.monthly_fee) || Number(selectedRoom.monthly_fee) || 6500;
+                                  const bal = row.status === 'VACANT' ? 0 : Math.max(0, monthlyRent - paid);
+
+                                  return (
+                                    <td key={m} className="py-2.5 px-3 text-center whitespace-nowrap">
+                                      {paid > 0 ? (
+                                        <span className="text-emerald-400 font-bold">₹{paid.toLocaleString('en-IN')}</span>
+                                      ) : bal > 0 ? (
+                                        <span className="text-rose-400/80">₹{bal.toLocaleString('en-IN')} due</span>
+                                      ) : (
+                                        <span className="text-white/20">-</span>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-2.5 px-3 text-right font-bold text-emerald-400 whitespace-nowrap">
+                                  ₹{resTotalPaid.toLocaleString('en-IN')}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </>

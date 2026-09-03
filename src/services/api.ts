@@ -63,7 +63,8 @@ export const api = {
 
   async transferRoom(residentId: string, payload: {
     new_room_id: string;
-    new_bed_id: string;
+    new_bed_id?: string;
+    new_bed_number?: number;
     transfer_reason?: string;
     admin_user?: string;
   }) {

@@ -10,8 +10,6 @@ import {
   Building2,
   Phone,
   MessageSquare,
-  ShieldCheck,
-  ShieldAlert,
   ArrowRightLeft,
   UserMinus,
   Eye,
@@ -57,15 +55,13 @@ export const Residents: React.FC<ResidentsProps> = ({
     openVacateResidentModal,
     setRecordPaymentModalOpen,
     setPreselectedResidentForPayment,
-    setUploadKYCResident,
-    setUploadKYCModalOpen,
     sendWhatsApp,
     sendDirectWhatsApp,
     addToast
   } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'VACATED' | 'PENDING_PAYMENT' | 'PAID' | 'KYC_PENDING' | 'KYC_VERIFIED'>('ACTIVE');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'VACATED' | 'PENDING_PAYMENT' | 'PAID'>('ACTIVE');
   const [floorFilter, setFloorFilter] = useState<string>('ALL');
   const [selectedResidentIds, setSelectedResidentIds] = useState<string[]>([]);
   const [bulkActionSending, setBulkActionSending] = useState(false);
@@ -139,8 +135,6 @@ export const Residents: React.FC<ResidentsProps> = ({
       if (statusFilter === 'VACATED' && r.status !== 'VACATED') return false;
       if (statusFilter === 'PENDING_PAYMENT' && (r.status !== 'ACTIVE' || r.aug_balance === 0)) return false;
       if (statusFilter === 'PAID' && (r.status !== 'ACTIVE' || r.payment_status !== 'PAID')) return false;
-      if (statusFilter === 'KYC_PENDING' && r.kyc_status === 'VERIFIED') return false;
-      if (statusFilter === 'KYC_VERIFIED' && r.kyc_status !== 'VERIFIED') return false;
 
       // Floor filter
       if (floorFilter !== 'ALL') {
@@ -247,8 +241,6 @@ export const Residents: React.FC<ResidentsProps> = ({
             { id: 'ACTIVE', label: 'Active Residents' },
             { id: 'PENDING_PAYMENT', label: 'Pending Dues' },
             { id: 'PAID', label: 'Paid Full' },
-            { id: 'KYC_PENDING', label: 'KYC Action Req.' },
-            { id: 'KYC_VERIFIED', label: 'KYC Verified' },
             { id: 'VACATED', label: 'Former / Vacated' },
             { id: 'ALL', label: 'All Records' }
           ].map(tab => (
@@ -435,7 +427,6 @@ export const Residents: React.FC<ResidentsProps> = ({
                 <th className="py-3.5 px-3">Advance</th>
                 <th className="py-3.5 px-3">Aug Paid</th>
                 <th className="py-3.5 px-3">Aug Dues</th>
-                <th className="py-3.5 px-3">KYC</th>
                 <th className="py-3.5 px-3">Status</th>
                 <th className="py-3.5 px-3 text-right">Actions</th>
               </tr>
@@ -443,7 +434,7 @@ export const Residents: React.FC<ResidentsProps> = ({
             <tbody className="divide-y divide-white/[0.05]">
               {filteredResidents.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-[#8E8E9F]">
+                  <td colSpan={9} className="py-12 text-center text-[#8E8E9F]">
                     No residents matching your filter criteria.
                   </td>
                 </tr>
@@ -530,28 +521,6 @@ export const Residents: React.FC<ResidentsProps> = ({
                         ) : (
                           <span className="text-emerald-400 font-bold">₹0 (Paid)</span>
                         )}
-                      </td>
-
-                      {/* KYC Status */}
-                      <td className="py-3 px-3">
-                        <button
-                          onClick={() => {
-                            setUploadKYCResident(r);
-                            setUploadKYCModalOpen(true);
-                          }}
-                          className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold transition-all hover:scale-105 ${
-                            r.kyc_status === 'VERIFIED'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
-                          }`}
-                        >
-                          {r.kyc_status === 'VERIFIED' ? (
-                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                          ) : (
-                            <ShieldAlert className="w-3 h-3 text-[#FF6F3C]" />
-                          )}
-                          <span>{r.kyc_status || 'PENDING'}</span>
-                        </button>
                       </td>
 
                       {/* Active / Vacated status */}

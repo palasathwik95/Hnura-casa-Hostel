@@ -1,10 +1,13 @@
 import { Resident, Payment, SystemSettings } from '../types';
 
+export const OFFICIAL_WHATSAPP_GATEWAY = '8882997700';
+export const OFFICIAL_WHATSAPP_DISPLAY = '+91 8882997700';
+
 /**
  * Cleans phone number to international format (defaulting to India country code +91)
  */
 export function cleanWhatsAppPhone(phone: string): string {
-  if (!phone) return '';
+  if (!phone) return '918882997700';
   // Remove all non-digit characters except +
   let cleaned = phone.replace(/[^0-9]/g, '');
   
@@ -17,7 +20,7 @@ export function cleanWhatsAppPhone(phone: string): string {
     // Already in 91XXXXXXXXXX format
   }
   
-  return cleaned;
+  return cleaned || '918882997700';
 }
 
 export interface WhatsAppMessagePayload {

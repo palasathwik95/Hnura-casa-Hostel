@@ -40,9 +40,9 @@ export const NotificationsView: React.FC = () => {
             No notifications in your feed.
           </div>
         ) : (
-          notifications.map(n => (
+          notifications.map((n, index) => (
             <div
-              key={n.id}
+              key={`${n.id || 'notif'}-${index}`}
               className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.03] transition-colors ${
                 !n.is_read ? 'bg-[#FF1E9A]/[0.02]' : ''
               }`}

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const StaffView: React.FC = () => {
-  const { staff, disburseSalary, addToast } = useApp();
+  const { staff, disburseSalary, addToast, setAddStaffModalOpen } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-08');
@@ -29,7 +29,7 @@ export const StaffView: React.FC = () => {
     );
   });
 
-  const totalMonthlyPayroll = staff.reduce((sum, s) => sum + s.salary, 0);
+  const totalMonthlyPayroll = staff.reduce((sum, s) => sum + (s.monthly_salary || (s as any).salary || 0), 0);
 
   return (
     <div className="space-y-6 pb-12">
@@ -52,10 +52,17 @@ export const StaffView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 z-10">
+        <div className="flex flex-wrap items-center gap-3 z-10">
           <div className="bg-[#0B0B0C] px-4 py-2.5 rounded-xl border border-white/[0.08] text-xs font-mono text-[#E4E4E7]">
             Payroll Period: <span className="text-[#0CC6FF] font-bold">August 2026</span>
           </div>
+          <button
+            onClick={() => setAddStaffModalOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-[#6C4CFF] to-[#0CC6FF] text-white font-bold rounded-xl text-xs hover:brightness-110 shadow-lg shadow-[#6C4CFF]/20 active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Staff</span>
+          </button>
         </div>
       </div>
 
@@ -78,15 +85,15 @@ export const StaffView: React.FC = () => {
         <div className="bg-[#141414] p-5 rounded-2xl border border-white/[0.08] shadow-lg">
           <span className="text-[11px] text-emerald-400 font-mono font-bold uppercase tracking-wider">Disbursement Realization</span>
           <p className="text-3xl font-mono font-bold text-emerald-400 mt-2">
-            {staff.filter(s => s.salary_history.some(h => h.month === selectedMonth)).length} / {staff.length} Paid
+            {staff.filter(s => ((s as any).salary_history || []).some((h: any) => h.month === selectedMonth)).length} / {staff.length} Paid
           </p>
           <p className="text-xs text-[#8E8E9F] mt-1">Direct Bank Wire / UPI Vouchers</p>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="bg-[#141414] p-4 rounded-2xl border border-white/[0.08] shadow-lg">
-        <div className="relative">
+      <div className="bg-[#141414] p-4 rounded-2xl border border-white/[0.08] shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1">
           <Search className="w-4 h-4 text-[#8E8E9F] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -96,13 +103,22 @@ export const StaffView: React.FC = () => {
             className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-[#8E8E9F] focus:outline-none focus:border-[#6C4CFF] transition-colors"
           />
         </div>
+        <button
+          onClick={() => setAddStaffModalOpen(true)}
+          className="sm:hidden flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-[#6C4CFF] to-[#0CC6FF] text-white font-bold rounded-xl text-xs hover:brightness-110 shadow-md active:scale-95 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Staff</span>
+        </button>
       </div>
 
       {/* Staff Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredStaff.map(member => {
-          const paidThisMonth = member.salary_history.some(h => h.month === selectedMonth);
-          const historyEntry = member.salary_history.find(h => h.month === selectedMonth);
+          const history = (member as any).salary_history || [];
+          const paidThisMonth = history.some((h: any) => h.month === selectedMonth);
+          const historyEntry = history.find((h: any) => h.month === selectedMonth);
+          const salaryAmount = member.monthly_salary || (member as any).salary || 0;
 
           return (
             <div
@@ -111,8 +127,12 @@ export const StaffView: React.FC = () => {
             >
               <div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#6C4CFF]/20 to-[#FF1E9A]/20 border border-white/[0.08] flex items-center justify-center text-[#FF1E9A] font-bold text-sm font-mono">
-                    {member.name.split(' ').map(n => n[0]).join('')}
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#6C4CFF]/20 to-[#FF1E9A]/20 border border-white/[0.08] flex items-center justify-center text-[#FF1E9A] font-bold text-sm font-mono overflow-hidden">
+                    {member.photo_url ? (
+                      <img src={member.photo_url} alt={member.name} className="w-full h-full object-cover" />
+                    ) : (
+                      member.name.split(' ').map(n => n[0]).join('')
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-white text-sm">{member.name}</h3>
@@ -124,12 +144,18 @@ export const StaffView: React.FC = () => {
                 <div className="mt-4 bg-[#0B0B0C] p-3 rounded-xl border border-white/[0.06] space-y-1.5 text-xs font-mono">
                   <div className="flex justify-between">
                     <span className="text-[#8E8E9F]">Monthly Salary:</span>
-                    <span className="text-emerald-400 font-bold">₹{(member.salary || 0).toLocaleString('en-IN')}</span>
+                    <span className="text-emerald-400 font-bold">₹{salaryAmount.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8E8E9F]">Joining Date:</span>
                     <span className="text-[#E4E4E7]">{member.joining_date}</span>
                   </div>
+                  {member.emergency_contact && (
+                    <div className="flex justify-between">
+                      <span className="text-[#8E8E9F]">Alt / Contact:</span>
+                      <span className="text-[#E4E4E7]">{member.emergency_contact}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-[#8E8E9F]">August Status:</span>
                     <span className={`font-bold ${paidThisMonth ? 'text-emerald-400' : 'text-[#FF6F3C]'}`}>
@@ -158,11 +184,11 @@ export const StaffView: React.FC = () => {
                 {!paidThisMonth ? (
                   <button
                     onClick={() => {
-                      if (confirm(`Disburse ₹${(member.salary || 0).toLocaleString('en-IN')} to ${member.name} for ${selectedMonth}?`)) {
+                      if (confirm(`Disburse ₹${salaryAmount.toLocaleString('en-IN')} to ${member.name} for ${selectedMonth}?`)) {
                         disburseSalary({
                           staff_id: member.id,
                           month: selectedMonth,
-                          amount: member.salary,
+                          amount: salaryAmount,
                           payment_mode: 'UPI'
                         });
                       }

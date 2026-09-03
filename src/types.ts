@@ -129,9 +129,11 @@ export interface Resident {
   whatsapp: string;
   email: string;
   college: string;
+  college_id?: string;
   course: string;
   academic_year: string;
   date_of_birth: string;
+  aadhaar_number?: string;
   parent_name: string;
   parent_phone: string;
   emergency_contact: string;

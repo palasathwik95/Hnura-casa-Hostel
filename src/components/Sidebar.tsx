@@ -36,9 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
     setSelectedResidentId,
     setSelectedRoomId,
     metrics,
-    settings,
-    resetDemoDatabase,
-    clearAllData
+    settings
   } = useApp();
 
   const handleNav = (tab: ActiveNavTab) => {
@@ -92,23 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
       badgeColor: 'bg-[#FF6F3C]/20 text-[#FF6F3C] border border-[#FF6F3C]/30',
       accentColor: '#FF6F3C'
     },
-    {
-      id: 'complaints',
-      label: 'Complaints',
-      icon: MessageSquareWarning,
-      badge: metrics?.unresolved_complaints && metrics.unresolved_complaints > 0 ? metrics.unresolved_complaints : undefined,
-      badgeColor: 'bg-[#FF1E9A]/20 text-[#FF1E9A] border border-[#FF1E9A]/30',
-      accentColor: '#FF1E9A'
-    },
     { id: 'staff', label: 'Staff & Payroll', icon: UserCheck, accentColor: '#6C4CFF' },
-    {
-      id: 'kyc',
-      label: 'Digital KYC Vault',
-      icon: ShieldCheck,
-      badge: metrics?.pending_kyc_count && metrics.pending_kyc_count > 0 ? `${metrics.pending_kyc_count} req` : undefined,
-      badgeColor: 'bg-[#0CC6FF]/20 text-[#0CC6FF] border border-[#0CC6FF]/30',
-      accentColor: '#0CC6FF'
-    },
     { id: 'whatsapp', label: 'WhatsApp Center', icon: Send, accentColor: '#25D366' },
     { id: 'reports', label: 'Reports & P&L', icon: FileBarChart, accentColor: '#6C4CFF' },
     { id: 'notifications', label: 'Notifications', icon: Bell, accentColor: '#0CC6FF' },
@@ -220,35 +202,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
 
         {/* System Management & Admin Status */}
         <div className="p-4 border-t border-white/[0.08] bg-[#0B0B0C] space-y-3">
-          {/* Quick Database Action Bar */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                if (confirm('Clear all demo residents, payments, and records to start fresh for real check-ins?')) {
-                  clearAllData();
-                }
-              }}
-              title="Wipe demo data (Clean Slate)"
-              className="px-2.5 py-1.5 rounded-xl bg-[#141414] hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 text-[11px] font-mono flex items-center justify-center space-x-1.5 transition-all"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Clean Slate</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (confirm('Load demo seed dataset with synchronized mock residents?')) {
-                  resetDemoDatabase();
-                }
-              }}
-              title="Reset Demo Dataset"
-              className="px-2.5 py-1.5 rounded-xl bg-[#141414] hover:bg-[#6C4CFF]/20 text-[#0CC6FF] border border-[#0CC6FF]/20 text-[11px] font-mono flex items-center justify-center space-x-1.5 transition-all"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Demo Seed</span>
-            </button>
-          </div>
-
           {/* Admin Profile Widget */}
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#141414] border border-white/[0.08]">
             <div className="flex items-center space-x-2.5">

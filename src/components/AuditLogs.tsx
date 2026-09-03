@@ -62,8 +62,8 @@ export const AuditLogs: React.FC = () => {
       {/* Log Feed */}
       <div className="bg-[#141414] rounded-2xl border border-white/[0.08] p-6 space-y-4 shadow-xl">
         <div className="relative pl-6 border-l border-white/[0.08] space-y-5">
-          {filteredLogs.map(log => (
-            <div key={log.id} className="relative group">
+          {filteredLogs.map((log, index) => (
+            <div key={`${log.id || 'log'}-${index}`} className="relative group">
               <span className="absolute -left-[31px] top-2 w-2.5 h-2.5 rounded-full bg-[#FF1E9A] shadow-[0_0_10px_#FF1E9A] border-2 border-[#141414] group-hover:scale-125 transition-transform" />
               <div className="bg-[#0B0B0C] p-4 rounded-xl border border-white/[0.06] text-xs space-y-2 hover:border-white/20 transition-colors">
                 <div className="flex flex-wrap items-center justify-between gap-2">

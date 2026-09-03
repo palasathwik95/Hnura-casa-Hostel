@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Resident, Payment } from '../types';
 import {
@@ -14,8 +14,6 @@ import {
   Mail,
   GraduationCap,
   MapPin,
-  ShieldCheck,
-  ShieldAlert,
   Wallet,
   Clock,
   CheckCircle2,
@@ -23,12 +21,11 @@ import {
   FileText,
   MessageSquareWarning,
   History,
-  FileCheck,
   Printer,
   XCircle,
-  Upload,
   Sparkles,
-  ExternalLink
+  Camera,
+  Upload
 } from 'lucide-react';
 
 interface ResidentProfileProps {
@@ -50,7 +47,6 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
     residents,
     payments,
     advances,
-    residentDocuments,
     roomAssignments,
     complaints,
     whatsappMessages,
@@ -61,23 +57,22 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
     setRecordPaymentModalOpen,
     setPreselectedResidentForPayment,
     setPrintReceiptPayment,
-    setUploadKYCResident,
-    setUploadKYCModalOpen,
-    verifyKYC,
     sendDirectWhatsApp,
-    uploadKYC,
+    updateResident,
     addToast
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'financials' | 'kyc' | 'transfers' | 'complaints' | 'whatsapp' | 'timeline'
+    'overview' | 'financials' | 'transfers' | 'whatsapp' | 'timeline'
   >('overview');
 
   const [profileWhatsAppType, setProfileWhatsAppType] = useState<
-    'PAYMENT_REMINDER' | 'PAYMENT_CONFIRMATION' | 'KYC_REQUEST' | 'CUSTOM'
+    'PAYMENT_REMINDER' | 'PAYMENT_CONFIRMATION' | 'CUSTOM'
   >('PAYMENT_REMINDER');
   const [profileWhatsAppText, setProfileWhatsAppText] = useState('');
   const [isSendingProfileWA, setIsSendingProfileWA] = useState(false);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
   const resident = residents.find(r => r.id === residentId);
 
@@ -99,11 +94,6 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
   const currentMonthBalance = resident?.status === 'ACTIVE'
     ? Math.max(0, (resident.monthly_fee || 0) - currentMonthPaid)
     : 0;
-
-  // Documents
-  const docs = useMemo(() => {
-    return residentDocuments.filter(d => d.resident_id === residentId);
-  }, [residentDocuments, residentId]);
 
   // Assignments
   const assignments = useMemo(() => {
@@ -137,6 +127,35 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
   }
 
   const isVacated = resident.status === 'VACATED';
+
+  const handleAvatarDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('error', 'File Too Large', 'Please select an image smaller than 5MB.');
+      return;
+    }
+
+    setIsUpdatingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      if (event.target?.result) {
+        const newPhotoUrl = event.target.result as string;
+        try {
+          await updateResident({
+            id: resident.id,
+            photo_url: newPhotoUrl
+          });
+          addToast('success', 'Photo Updated', `${resident.name}'s profile picture has been updated.`);
+        } catch (err) {
+          // handled
+        } finally {
+          setIsUpdatingPhoto(false);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Safe handler actions
   const handleEdit = () => {
@@ -240,11 +259,30 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF1E9A]/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-start sm:items-center space-x-4 sm:space-x-5 z-10">
-          <img
-            src={resident.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80'}
-            alt={resident.name}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#FF1E9A]/50 shadow-[0_0_20px_rgba(255,30,154,0.2)]"
-          />
+          <div className="relative group flex-shrink-0">
+            <input
+              type="file"
+              ref={avatarFileInputRef}
+              onChange={handleAvatarDirectUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <img
+              src={resident.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80'}
+              alt={resident.name}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#FF1E9A]/50 shadow-[0_0_20px_rgba(255,30,154,0.2)]"
+            />
+            <button
+              onClick={() => avatarFileInputRef.current?.click()}
+              disabled={isUpdatingPhoto}
+              className="absolute inset-0 bg-black/70 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-semibold gap-1 backdrop-blur-xs cursor-pointer"
+              title="Click to update student profile picture"
+            >
+              <Camera className="w-5 h-5 text-[#0CC6FF]" />
+              <span>{isUpdatingPhoto ? 'Updating...' : 'Change Photo'}</span>
+            </button>
+          </div>
+
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white tracking-tight">
@@ -262,15 +300,13 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
               >
                 {resident.status}
               </span>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
-                  resident.kyc_status === 'VERIFIED'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
-                }`}
+              <button
+                onClick={() => avatarFileInputRef.current?.click()}
+                className="px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-white/[0.05] hover:bg-white/[0.1] text-[#0CC6FF] border border-white/[0.08] transition-colors flex items-center space-x-1.5 cursor-pointer"
               >
-                KYC: {resident.kyc_status} ({resident.kyc_completion}%)
-              </span>
+                <Camera className="w-3.5 h-3.5" />
+                <span>Update Photo</span>
+              </button>
             </div>
 
             <p className="text-xs text-[#E4E4E7] mt-1.5 flex flex-wrap items-center gap-3">
@@ -330,11 +366,9 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
       {/* Tabs Navigation */}
       <div className="flex items-center space-x-2 border-b border-white/[0.08] pb-2 overflow-x-auto text-xs scrollbar-none">
         {[
-          { id: 'overview', label: 'Profile & Contact' },
+          { id: 'overview', label: 'Profile & Contacts' },
           { id: 'financials', label: `Financial Ledger (${residentPayments.length})` },
-          { id: 'kyc', label: `KYC Vault (${docs.length})` },
           { id: 'transfers', label: `Room Transfers (${assignments.length})` },
-          { id: 'complaints', label: `Complaints (${residentComplaints.length})` },
           { id: 'whatsapp', label: `WhatsApp Logs (${messages.length})` },
           { id: 'timeline', label: `Audit Trail (${historyLogs.length})` }
         ].map(tab => (
@@ -372,7 +406,9 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
               </div>
               <div className="flex justify-between py-1 border-b border-white/[0.05]">
                 <span className="text-[#8E8E9F]">Primary Phone</span>
-                <span className="text-[#E4E4E7] font-mono">{resident.phone}</span>
+                <a href={`tel:${resident.phone}`} className="text-[#E4E4E7] hover:text-[#0CC6FF] font-mono transition-colors">
+                  {resident.phone}
+                </a>
               </div>
               <div className="flex justify-between py-1 border-b border-white/[0.05]">
                 <span className="text-[#8E8E9F]">WhatsApp</span>
@@ -386,10 +422,22 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
                 <span className="text-[#8E8E9F]">College / Work</span>
                 <span className="text-[#E4E4E7] text-right">{resident.college || 'N/A'}</span>
               </div>
-              <div className="flex justify-between py-1">
+              {resident.college_id && (
+                <div className="flex justify-between py-1 border-b border-white/[0.05]">
+                  <span className="text-[#8E8E9F]">College / Roll ID</span>
+                  <span className="text-[#0CC6FF] font-mono font-bold">{resident.college_id}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-1 border-b border-white/[0.05]">
                 <span className="text-[#8E8E9F]">Course & Year</span>
                 <span className="text-[#E4E4E7]">{resident.course} ({resident.academic_year})</span>
               </div>
+              {resident.aadhaar_number && (
+                <div className="flex justify-between py-1">
+                  <span className="text-[#8E8E9F]">Aadhaar Number</span>
+                  <span className="text-white font-mono font-bold tracking-wider">{resident.aadhaar_number}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -401,21 +449,33 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
             </h3>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-white/[0.05]">
-                <span className="text-[#8E8E9F]">Parent Name</span>
-                <span className="font-bold text-white">{resident.parent_name || 'N/A'}</span>
+                <span className="text-[#8E8E9F]">Parent / Guardian Name</span>
+                <span className="font-bold text-white">{resident.parent_name || 'Not Specified'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-white/[0.05]">
                 <span className="text-[#8E8E9F]">Parent Contact</span>
-                <span className="text-[#E4E4E7] font-mono">{resident.parent_phone || 'N/A'}</span>
+                {resident.parent_phone ? (
+                  <a href={`tel:${resident.parent_phone}`} className="text-emerald-400 font-mono font-bold hover:underline">
+                    {resident.parent_phone}
+                  </a>
+                ) : (
+                  <span className="text-[#8E8E9F] font-mono">Not Provided</span>
+                )}
               </div>
               <div className="flex justify-between py-1 border-b border-white/[0.05]">
-                <span className="text-[#8E8E9F]">Emergency Phone</span>
-                <span className="text-rose-400 font-mono font-bold">{resident.emergency_contact || 'N/A'}</span>
+                <span className="text-[#8E8E9F]">Emergency Contact</span>
+                {resident.emergency_contact ? (
+                  <a href={`tel:${resident.emergency_contact}`} className="text-rose-400 font-mono font-bold hover:underline">
+                    {resident.emergency_contact}
+                  </a>
+                ) : (
+                  <span className="text-[#8E8E9F] font-mono">Not Provided</span>
+                )}
               </div>
               <div className="py-1">
                 <span className="text-[#8E8E9F] block mb-1">Permanent Home Address</span>
                 <p className="text-[#E4E4E7] bg-[#0B0B0C] p-2.5 rounded-xl border border-white/[0.08]">
-                  {resident.permanent_address || 'Address details on file.'}
+                  {resident.permanent_address || 'Permanent address not specified during enrollment.'}
                 </p>
               </div>
             </div>
@@ -590,110 +650,7 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
         </div>
       )}
 
-      {/* TAB 3: DIGITAL KYC DOCUMENTS */}
-      {activeTab === 'kyc' && (
-        <div className="space-y-5">
-          <div className="bg-[#141414] p-5 rounded-2xl border border-white/[0.08] flex items-center justify-between shadow-lg">
-            <div>
-              <h3 className="text-sm font-bold text-white">Digital Identity & Document Vault</h3>
-              <p className="text-xs text-[#8E8E9F]">Upload, inspect, and approve resident KYC records</p>
-            </div>
-            <button
-              onClick={() => {
-                setUploadKYCResident(resident);
-                setUploadKYCModalOpen(true);
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-[#0CC6FF] to-[#6C4CFF] text-white rounded-xl text-xs font-bold hover:brightness-110 shadow-md transition-all flex items-center space-x-1.5"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>+ Upload Document</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {docs.length === 0 ? (
-              <div className="col-span-full bg-[#141414] p-8 text-center rounded-2xl border border-white/[0.08] text-[#8E8E9F]">
-                No KYC documents uploaded yet for this resident.
-              </div>
-            ) : (
-              docs.map(doc => (
-                <div key={doc.id} className="bg-[#141414] p-4 rounded-2xl border border-white/[0.08] space-y-3 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-[#0B0B0C] text-[#0CC6FF] font-mono text-[10px] border border-white/[0.08] font-bold">
-                      {doc.document_type}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                        doc.status === 'VERIFIED'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                          : doc.status === 'REJECTED'
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                          : 'bg-[#FF6F3C]/15 text-[#FF6F3C] border border-[#FF6F3C]/30'
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </div>
-
-                  <div className="h-44 rounded-xl overflow-hidden bg-[#0B0B0C] border border-white/[0.08] relative group">
-                    <img
-                      src={doc.document_url}
-                      alt={doc.document_name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <a
-                        href={doc.document_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold border border-white/30 flex items-center space-x-1.5"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>View Full Document</span>
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="text-xs space-y-1">
-                    <p className="font-bold text-white truncate">{doc.document_name}</p>
-                    <p className="text-[10px] text-[#8E8E9F] font-mono">
-                      Size: {doc.file_size} • Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
-                    </p>
-                    {doc.verified_by && (
-                      <p className="text-[10px] text-emerald-400 font-mono font-bold">
-                        ✓ Verified by {doc.verified_by} on {new Date(doc.verified_at!).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Admin Verification Actions */}
-                  <div className="flex items-center space-x-2 pt-2 border-t border-white/[0.08]">
-                    <button
-                      onClick={() => verifyKYC({ document_id: doc.id, status: 'VERIFIED' })}
-                      className="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-colors"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Verify & Approve</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const reason = prompt('Rejection reason:');
-                        verifyKYC({ document_id: doc.id, status: 'REJECTED', rejection_reason: reason || undefined });
-                      }}
-                      className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-colors"
-                    >
-                      <XCircle className="w-3.5 h-3.5" />
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: ROOM ASSIGNMENTS & TRANSFERS HISTORY */}
+      {/* TAB 3: ROOM ASSIGNMENTS & TRANSFERS HISTORY */}
       {activeTab === 'transfers' && (
         <div className="bg-[#141414] p-5 rounded-2xl border border-white/[0.08] space-y-4 shadow-lg">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
@@ -749,41 +706,7 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
         </div>
       )}
 
-      {/* TAB 5: COMPLAINTS */}
-      {activeTab === 'complaints' && (
-        <div className="bg-[#141414] p-5 rounded-2xl border border-white/[0.08] space-y-4 shadow-lg">
-          <h3 className="text-sm font-bold text-white">Resident Complaints & Service Tickets</h3>
-          <div className="space-y-3">
-            {residentComplaints.length === 0 ? (
-              <p className="text-xs text-[#8E8E9F] py-6 text-center">No complaints filed by this resident.</p>
-            ) : (
-              residentComplaints.map(cmp => (
-                <div key={cmp.id} className="p-4 bg-[#0B0B0C] rounded-xl border border-white/[0.06] space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-sm">
-                      {cmp.category} (Room {cmp.room_number})
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#FF6F3C]/10 text-[#FF6F3C] border border-[#FF6F3C]/30 uppercase font-bold">
-                      {cmp.status}
-                    </span>
-                  </div>
-                  <p className="text-[#E4E4E7]">{cmp.description}</p>
-                  {cmp.resolution_notes && (
-                    <p className="text-emerald-400 text-[11px] bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/30">
-                      Resolution: {cmp.resolution_notes}
-                    </p>
-                  )}
-                  <p className="text-[10px] text-[#8E8E9F] font-mono">
-                    Logged: {new Date(cmp.created_at).toLocaleDateString()} • Assigned: {cmp.assigned_person}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: WHATSAPP LOGS & COMPOSER */}
+      {/* TAB 5: WHATSAPP LOGS & COMPOSER */}
       {activeTab === 'whatsapp' && (
         <div className="space-y-5">
           {/* Quick Direct WhatsApp Dispatcher Box */}
@@ -796,11 +719,10 @@ export const ResidentProfile: React.FC<ResidentProfileProps> = ({
               <span className="text-xs font-mono text-[#25D366] font-bold">{resident.phone}</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { id: 'PAYMENT_REMINDER', label: 'Rent Reminder' },
                 { id: 'PAYMENT_CONFIRMATION', label: 'Payment Receipt' },
-                { id: 'KYC_REQUEST', label: 'KYC Alert' },
                 { id: 'CUSTOM', label: 'Custom Message' }
               ].map(t => (
                 <button

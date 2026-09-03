@@ -41,7 +41,7 @@ export const SettingsView: React.FC = () => {
   // Settings State
   const [propertyName, setPropertyName] = useState(settings?.property_name || 'Hanura Casa Luxury Living');
   const [propertyAddress, setPropertyAddress] = useState(settings?.address || 'Plot 42, Silicon Valley Layout, Madhapur, Hyderabad');
-  const [propertyPhone, setPropertyPhone] = useState(settings?.contact_phone || '+91 98765 43210');
+  const [propertyPhone, setPropertyPhone] = useState(settings?.contact_phone || '+91 8882997700');
   const [propertyUpi, setPropertyUpi] = useState(settings?.upi_id || 'hanuracasa@icici');
   const [whatsappApiKey, setWhatsappApiKey] = useState(settings?.whatsapp_access_token || 'wh_live_hc_98472918347239');
   const [adminName, setAdminName] = useState(settings?.admin_name || 'Sathwik Pala (Director)');
