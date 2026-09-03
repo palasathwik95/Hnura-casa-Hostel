@@ -115,7 +115,7 @@ export const Dashboard: React.FC = () => {
   }).filter(item => item.balance > 0);
 
   // Unpaid staff for current month
-  const unpaidStaff = staff.filter(s => !s.salary_history.some(h => h.month === '2026-08'));
+  const unpaidStaff = staff.filter(s => !salaryPayments.some(payment => payment.staff_id === s.id && payment.month === '2026-08'));
 
   // Pending maintenance
   const openMaintenance = maintenanceRequests.filter(m => m.status === 'PENDING' || m.status === 'IN_PROGRESS');
@@ -456,7 +456,7 @@ export const Dashboard: React.FC = () => {
                         <p className="text-[10px] text-[#8E8E9F] truncate">{stf.role}</p>
                       </div>
                       <span className="text-[10px] font-mono font-bold text-emerald-400">
-                        ₹{(stf.salary || 0).toLocaleString('en-IN')}
+                        ₹{(stf.monthly_salary || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                   ))
