@@ -55,15 +55,18 @@ export const Dashboard: React.FC = () => {
 
   if (!metrics) {
     return (
-      <div className="flex items-center justify-center h-96 text-white/50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FF1E9A]" />
+      <div className="flex flex-col items-center justify-center h-96 text-white/60 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#FF1E9A] border-t-transparent" />
+        <p className="text-xs font-mono tracking-widest uppercase text-[#8E8E9F]">
+          Synchronizing Hanura Casa Telemetry...
+        </p>
       </div>
     );
   }
 
   // Format currency in Indian format
   const formatINR = (val?: number | null) => {
-    return `₹${(val ?? 0).toLocaleString('en-IN')}`;
+    return `₹${(Number(val) || 0).toLocaleString('en-IN')}`;
   };
 
   // Prepare Chart Data from real DB payments and expenses across recent months
@@ -78,9 +81,9 @@ export const Dashboard: React.FC = () => {
 
   const revenueVsExpenseData = months.map(m => {
     const monthPayments = payments.filter(p => p.month === m);
-    const monthExpenses = expenses.filter(e => e.date.startsWith(m));
-    const revenue = monthPayments.reduce((sum, p) => sum + p.amount_paid, 0);
-    const expense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const monthExpenses = expenses.filter(e => e.date && e.date.startsWith(m));
+    const revenue = monthPayments.reduce((sum, p) => sum + (Number(p.amount_paid) || 0), 0);
+    const expense = monthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const net = revenue - expense;
 
     return {
@@ -93,9 +96,10 @@ export const Dashboard: React.FC = () => {
 
   // Expense Categories Pie Data
   const expenseCatMap: Record<string, number> = {};
-  const currentMonthExpenses = expenses.filter(e => e.date.startsWith('2026-08'));
+  const currentMonthExpenses = expenses.filter(e => e.date && e.date.startsWith('2026-08'));
   currentMonthExpenses.forEach(e => {
-    expenseCatMap[e.category] = (expenseCatMap[e.category] || 0) + e.amount;
+    const cat = e.category || 'OTHER';
+    expenseCatMap[cat] = (expenseCatMap[cat] || 0) + (Number(e.amount) || 0);
   });
 
   const pieColors = ['#FF1E9A', '#0CC6FF', '#FF6F3C', '#6C4CFF', '#10B981', '#F59E0B', '#8B5CF6'];
@@ -107,16 +111,21 @@ export const Dashboard: React.FC = () => {
   // Attention Required Lists
   const activeResidents = residents.filter(r => r.status === 'ACTIVE');
   
-  // Pending fee residents for Aug 2026
+  // Pending fee residents for Aug 2026 (sum all partial payments)
   const pendingResidents = activeResidents.map(r => {
-    const payment = payments.find(p => p.resident_id === r.id && p.month === '2026-08');
-    const paid = payment ? payment.amount_paid : 0;
-    const balance = Math.max(0, (r.monthly_fee || 0) - paid);
-    return { resident: r, paid, expected: r.monthly_fee, balance };
+    const paid = payments
+      .filter(p => p.resident_id === r.id && p.month === '2026-08')
+      .reduce((sum, p) => sum + (Number(p.amount_paid) || 0), 0);
+    const expected = Number(r.monthly_fee) || 0;
+    const balance = Math.max(0, expected - paid);
+    return { resident: r, paid, expected, balance };
   }).filter(item => item.balance > 0);
 
   // Unpaid staff for current month
-  const unpaidStaff = staff.filter(s => !salaryPayments.some(payment => payment.staff_id === s.id && payment.month === '2026-08'));
+  const unpaidStaff = staff.filter(s =>
+    (s.status === 'ACTIVE' || !s.status) &&
+    !salaryPayments.some(payment => payment.staff_id === s.id && payment.month === '2026-08')
+  );
 
   // Pending maintenance
   const openMaintenance = maintenanceRequests.filter(m => m.status === 'PENDING' || m.status === 'IN_PROGRESS');
@@ -322,41 +331,55 @@ export const Dashboard: React.FC = () => {
               <span className="text-xs font-mono font-bold text-[#FF6F3C]">{formatINR(metrics.total_expenses)}</span>
             </div>
 
-            <div className="h-48 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expensePieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {expensePieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0B0B0C', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
-                    formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {expensePieData.length === 0 ? (
+              <div className="h-48 w-full flex flex-col items-center justify-center text-center p-4">
+                <p className="text-xs text-[#8E8E9F]">No operational outflows recorded for August 2026.</p>
+                <button
+                  onClick={() => setActiveTab('expenses')}
+                  className="mt-2 text-[10px] font-mono font-bold text-[#0CC6FF] hover:underline"
+                >
+                  + Add First Expense
+                </button>
+              </div>
+            ) : (
+              <div className="h-48 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expensePieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {expensePieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0B0B0C', borderColor: '#23232A', borderRadius: '12px', color: '#FFF' }}
+                      formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Legend Items */}
-          <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-white/[0.06]">
-            {expensePieData.map((entry, index) => (
-              <div key={entry.name} className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pieColors[index % pieColors.length] }} />
-                <span className="text-[#8E8E9F] truncate">{entry.name}:</span>
-                <span className="font-mono text-white font-bold">{formatINR(entry.value)}</span>
-              </div>
-            ))}
-          </div>
+          {expensePieData.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-white/[0.06]">
+              {expensePieData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pieColors[index % pieColors.length] }} />
+                  <span className="text-[#8E8E9F] truncate">{entry.name}:</span>
+                  <span className="font-mono text-white font-bold">{formatINR(entry.value)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
