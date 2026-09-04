@@ -38,6 +38,7 @@ import {
 export const Dashboard: React.FC = () => {
   const {
     metrics,
+    floors,
     residents,
     rooms,
     payments,
@@ -175,7 +176,7 @@ export const Dashboard: React.FC = () => {
             <Building2 className="w-3.5 h-3.5 text-[#0CC6FF] group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-white font-mono mb-1">{metrics.total_beds}</div>
-          <div className="text-[11px] text-[#8E8E9F] font-medium">4 Floors Configured</div>
+          <div className="text-[11px] text-[#8E8E9F] font-medium">{floors.length} Floors Configured</div>
         </div>
 
         {/* Occupied Beds */}

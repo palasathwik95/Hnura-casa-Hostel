@@ -45,6 +45,7 @@ export const Residents: React.FC<ResidentsProps> = ({
   onOpenEditModal: propOnOpenEditModal
 }) => {
   const {
+    floors,
     residents,
     payments,
     advances,
@@ -279,11 +280,12 @@ export const Residents: React.FC<ResidentsProps> = ({
               onChange={e => setFloorFilter(e.target.value)}
               className="w-full bg-[#0B0B0C] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#0CC6FF]"
             >
-              <option value="ALL">All Floors (1 to 4)</option>
-              <option value="1">Floor 1 (Premier)</option>
-              <option value="2">Floor 2 (Club)</option>
-              <option value="3">Floor 3 (Executive)</option>
-              <option value="4">Floor 4 (Sky Suite)</option>
+              <option value="ALL">All Floors {floors.length > 0 ? `(${floors.length} configured)` : ''}</option>
+              {floors.map(f => (
+                <option key={f.id} value={String(f.floor_number)}>
+                  {f.name || `Floor ${f.floor_number}`}
+                </option>
+              ))}
             </select>
           </div>
         </div>

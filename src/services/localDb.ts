@@ -18,16 +18,9 @@ import {
   AuditLog,
   AdvanceAccount
 } from '../types';
-import {
-  initialSettings,
-  generateFloorsAndRooms,
-  initialResidentsData,
-  initialStaffData,
-  initialComplaintsData,
-  initialMaintenanceData
-} from '../../server/initialData';
+import { initialSettings } from '../../server/initialData';
 
-const LOCAL_STORAGE_KEY = 'hanura_casa_db_v2';
+const LOCAL_STORAGE_KEY = 'hanura_casa_db_v4_scratch';
 
 export interface BootstrapResponse extends DatabaseSchema {
   metrics: DashboardMetrics;
@@ -46,10 +39,16 @@ export class LocalDbService {
     }
 
     try {
+      // Clear legacy storage keys containing sample data
+      localStorage.removeItem('hanura_casa_db_v1');
+      localStorage.removeItem('hanura_casa_db_v2');
+      localStorage.removeItem('hanura_casa_db_v3');
+      localStorage.removeItem('hanura_casa_db_v3_clean');
+
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && Array.isArray(parsed.floors) && parsed.floors.length > 0) {
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.floors)) {
           return parsed;
         }
       }
@@ -76,325 +75,34 @@ export class LocalDbService {
   }
 
   public generateInitialData(): DatabaseSchema {
-    const { floors, rooms, beds } = generateFloorsAndRooms();
-    const residents: Resident[] = [];
-    const payments: Payment[] = [];
-    const advances: AdvanceAccount[] = [];
-    const expenses: Expense[] = [
-      {
-        id: 'EXP-2026-08-01',
-        title: 'Mess Groceries - Sonamasuri Rice & Provisions',
-        category: 'GROCERY',
-        subcategory: 'Mess Provisions & Rice',
-        amount: 14500,
-        date: '2026-08-02T08:30:00.000Z',
-        vendor: 'Sri Lakshmi Wholesale Mandi',
-        paid_to: 'Sri Lakshmi Wholesale Mandi',
-        payment_method: 'UPI',
-        payment_mode: 'UPI',
-        description: 'Bi-weekly bulk grocery purchase for hostel mess',
-        created_by: 'Sathwik Pala',
-        created_at: '2026-08-02T08:35:00.000Z'
-      },
-      {
-        id: 'EXP-2026-08-02',
-        title: 'Commercial Electricity Bill TSSPDCL',
-        category: 'ELECTRICITY',
-        subcategory: 'Commercial Electricity Bill',
-        amount: 42800,
-        date: '2026-08-05T10:00:00.000Z',
-        vendor: 'TSSPDCL Hyderabad',
-        paid_to: 'TSSPDCL Hyderabad',
-        payment_method: 'Bank Transfer',
-        payment_mode: 'Bank Transfer',
-        description: 'Monthly electricity bill for all 4 floors (Meter #772910)',
-        created_by: 'Sathwik Pala',
-        created_at: '2026-08-05T10:05:00.000Z'
-      },
-      {
-        id: 'EXP-2026-08-03',
-        title: 'Dedicated Leased Fiber Line Internet',
-        category: 'INTERNET',
-        subcategory: 'Dedicated Leased Fiber Line',
-        amount: 9440,
-        date: '2026-08-01T12:00:00.000Z',
-        vendor: 'ACT Fibernet Commercial',
-        paid_to: 'ACT Fibernet Commercial',
-        payment_method: 'UPI',
-        payment_mode: 'UPI',
-        description: '500 Mbps high speed dedicated line with static IP',
-        created_by: 'Sathwik Pala',
-        created_at: '2026-08-01T12:05:00.000Z'
-      },
-      {
-        id: 'EXP-2026-08-04',
-        title: 'Commercial LPG Cylinders (7 Units)',
-        category: 'GAS',
-        subcategory: 'Commercial LPG Cylinders',
-        amount: 12600,
-        date: '2026-08-06T15:00:00.000Z',
-        vendor: 'Indane Commercial Gas Agency',
-        paid_to: 'Indane Commercial Gas Agency',
-        payment_method: 'UPI',
-        payment_mode: 'UPI',
-        description: '7 commercial 19kg gas cylinders for kitchen',
-        created_by: 'Sathwik Pala',
-        created_at: '2026-08-06T15:05:00.000Z'
-      },
-      {
-        id: 'EXP-2026-08-05',
-        title: 'AC Servicing & Washroom Spares',
-        category: 'MAINTENANCE',
-        subcategory: 'AC Servicing & Plumbing',
-        amount: 4500,
-        date: '2026-08-11T16:30:00.000Z',
-        vendor: 'Naveen Chary / Metro Spares',
-        paid_to: 'Naveen Chary / Metro Spares',
-        payment_method: 'Cash',
-        payment_mode: 'Cash',
-        description: 'AC gas refill and washroom spare replacement',
-        created_by: 'Sathwik Pala',
-        created_at: '2026-08-11T16:35:00.000Z'
-      }
-    ];
-    const staff: Staff[] = [...initialStaffData];
-    const salary_payments: SalaryPayment[] = [];
-    const resident_documents: ResidentDocument[] = [];
-    const room_assignments: RoomAssignment[] = [];
-    const whatsapp_messages: WhatsAppMessage[] = [];
-    const notifications: NotificationItem[] = [];
-    const audit_logs: AuditLog[] = [];
-
-    // Seed Residents & Occupancy
-    initialResidentsData.forEach(initRes => {
-      const room = rooms.find(r => r.room_number === initRes.targetRoom);
-      let assignedBed: Bed | undefined;
-
-      if (room) {
-        assignedBed = beds.find(b => b.room_id === room.id && b.bed_number === initRes.targetBed);
-      }
-
-      const resId = initRes.id || `RES-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      const resident: Resident = {
-        id: resId,
-        name: initRes.name || 'Unnamed Resident',
-        photo_url: initRes.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(initRes.name || 'Resident')}`,
-        phone: initRes.phone || '+91 98765 43210',
-        whatsapp: initRes.whatsapp || initRes.phone || '+91 98765 43210',
-        email: initRes.email || 'resident@hanuracasa.com',
-        college: initRes.college || 'Engineering College',
-        course: initRes.course || 'B.Tech',
-        academic_year: initRes.academic_year || '3rd Year',
-        date_of_birth: initRes.date_of_birth || '2004-01-01',
-        parent_name: initRes.parent_name || 'Guardian',
-        parent_phone: initRes.parent_phone || '+91 98765 00000',
-        emergency_contact: initRes.emergency_contact || '+91 98765 00000',
-        permanent_address: initRes.permanent_address || 'Hyderabad, Telangana',
-        joining_date: initRes.joining_date || '2025-08-01',
-        floor_number: room ? room.floor_number : null,
-        vacated_date: initRes.isVacated ? '2026-06-30' : null,
-        vacated_reason: initRes.isVacated ? 'Course Completed' : null,
-        status: initRes.isVacated ? 'VACATED' : 'ACTIVE',
-        monthly_fee: initRes.monthly_fee || 6000,
-        sharing_type: initRes.sharing_type || '4-Sharing',
-        current_room_id: initRes.isVacated ? null : (room ? room.id : null),
-        current_room_number: initRes.isVacated ? null : (room ? room.room_number : null),
-        current_bed_id: initRes.isVacated ? null : (assignedBed ? assignedBed.id : null),
-        current_bed_number: initRes.isVacated ? null : (assignedBed ? assignedBed.bed_number : null),
-        kyc_status: (initRes.kyc_status as any) || 'VERIFIED',
-        kyc_completion: initRes.kyc_completion || 100,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      residents.push(resident);
-
-      if (!initRes.isVacated && assignedBed && room) {
-        assignedBed.status = 'OCCUPIED';
-        assignedBed.current_resident_id = resident.id;
-        assignedBed.current_resident_name = resident.name;
-
-        room_assignments.push({
-          id: `ASG-${resident.id}`,
-          resident_id: resident.id,
-          resident_name: resident.name,
-          room_id: room.id,
-          room_number: room.room_number,
-          bed_id: assignedBed.id,
-          bed_number: assignedBed.bed_number,
-          start_date: resident.joining_date,
-          end_date: null,
-          status: 'ACTIVE'
-        });
-
-        room.occupied_beds_count = (room.occupied_beds_count || 0) + 1;
-        room.vacant_beds_count = Math.max(0, room.capacity - room.occupied_beds_count);
-        if (room.occupied_beds_count >= room.capacity) {
-          room.status = 'FULL';
-        }
-      }
-
-      advances.push({
-        id: `ADV-${resident.id}`,
-        resident_id: resident.id,
-        resident_name: resident.name,
-        opening_advance: initRes.openAdvance || 6000,
-        current_advance: initRes.openAdvance || 6000,
-        transactions: [
-          {
-            id: `ADV-TXN-${resident.id}-01`,
-            type: 'DEPOSIT',
-            amount: initRes.openAdvance || 6000,
-            date: resident.joining_date,
-            reference: `ADV-INIT-${resident.id}`,
-            notes: 'Security deposit received at check-in',
-            balance_after: initRes.openAdvance || 6000
-          }
-        ]
-      });
-
-      // Seed Documents
-      resident_documents.push(
-        {
-          id: `DOC-${resident.id}-01`,
-          resident_id: resident.id,
-          document_type: 'AADHAAR',
-          document_name: 'Aadhaar_Card_Front_Back.pdf',
-          document_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-          file_size: '1.4 MB',
-          uploaded_at: resident.created_at,
-          verified_by: 'Sathwik Pala',
-          verified_at: '2025-08-05T14:30:00.000Z',
-          status: 'VERIFIED'
-        },
-        {
-          id: `DOC-${resident.id}-02`,
-          resident_id: resident.id,
-          document_type: 'COLLEGE_ID',
-          document_name: 'College_Student_ID.jpg',
-          document_url: 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=800&auto=format&fit=crop&q=80',
-          file_size: '850 KB',
-          uploaded_at: resident.created_at,
-          verified_by: 'Sathwik Pala',
-          verified_at: '2025-08-05T14:31:00.000Z',
-          status: 'VERIFIED'
-        }
-      );
-
-      // Seed Payments for months (2026-05, 2026-06, 2026-07, 2026-08)
-      const months = ['2026-05', '2026-06', '2026-07', '2026-08'];
-      months.forEach((m, idx) => {
-        let paid = resident.monthly_fee;
-        let bal = 0;
-
-        if (resident.id === 'RES-1001' && m === '2026-08') {
-          paid = 5000; // Partial payment for Rahul in Aug 2026
-          bal = 1500;
-        } else if (resident.id === 'RES-1004' && m === '2026-08') {
-          paid = 0; // Pending for Suresh
-          bal = resident.monthly_fee;
-        } else if (resident.id === 'RES-1009' && m === '2026-08') {
-          paid = 3000;
-          bal = 2500;
-        }
-
-        if (initRes.isVacated && (m === '2026-07' || m === '2026-08')) {
-          return;
-        }
-
-        if (paid > 0) {
-          payments.push({
-            id: `PAY-${m.replace('-', '')}-${resident.id.replace('RES-', '')}`,
-            resident_id: resident.id,
-            resident_name: resident.name,
-            room_id: room ? room.id : 'room_204',
-            room_number: room ? room.room_number : '204',
-            month: m,
-            expected_amount: resident.monthly_fee,
-            amount_paid: paid,
-            advance_used: 0,
-            balance: bal,
-            payment_date: `${m}-0${idx + 3}T11:00:00.000Z`,
-            payment_method: idx % 2 === 0 ? 'UPI' : 'Bank Transfer',
-            transaction_reference: `UPI/${m.replace('-', '')}/${Math.floor(100000000000 + Math.random() * 900000000000)}`,
-            notes: `Monthly fee for ${m}`,
-            recorded_by: 'Sathwik Pala',
-            created_at: `${m}-0${idx + 3}T11:05:00.000Z`
-          });
-        }
-      });
-    });
-
-    // Seed Staff Salaries
-    staff.forEach(s => {
-      salary_payments.push({
-        id: `SAL-2026-07-${s.id}`,
-        staff_id: s.id,
-        staff_name: s.name,
-        staff_role: s.role,
-        month: '2026-07',
-        salary: s.monthly_salary,
-        advance: 0,
-        deduction: 0,
-        paid: s.monthly_salary,
-        balance: 0,
-        payment_date: '2026-07-31T18:00:00.000Z',
-        payment_method: 'Bank Transfer',
-        transaction_ref: `NEFT/${s.id}/20260731`,
-        status: 'PAID'
-      });
-    });
-
-    // Notifications
-    notifications.push(
-      {
-        id: 'NOTIF-01',
-        type: 'PENDING_PAYMENT',
-        title: 'Pending Fee for August',
-        message: 'Rahul Sharma has a remaining balance of ₹1,500 for August 2026.',
-        timestamp: '2026-08-15T09:00:00.000Z',
-        is_read: false
-      },
-      {
-        id: 'NOTIF-02',
-        type: 'MAINTENANCE',
-        title: 'Pending AC Filter Cleaning',
-        message: 'Room 304 reported low cooling on AC unit.',
-        timestamp: '2026-08-16T14:30:00.000Z',
-        is_read: false
-      }
-    );
-
-    // Seed Audit Logs
-    audit_logs.push({
-      id: 'AUD-01',
-      admin_user: 'Sathwik Pala',
-      action: 'SYSTEM_BOOTSTRAP',
-      entity_type: 'SYSTEM',
-      entity_id: 'HC-HYD-01',
-      details: 'Hanura Casa Property Management Database initialized with standard G+3 layout.',
-      timestamp: '2026-08-01T06:00:00.000Z'
-    });
-
     return {
       settings: initialSettings,
-      floors,
-      rooms,
-      beds,
-      residents,
-      payments,
-      advances,
-      expenses,
-      staff,
-      salary_payments,
-      maintenance_requests: initialMaintenanceData,
-      complaints: initialComplaintsData,
-      resident_documents,
-      room_assignments,
-      whatsapp_messages,
-      notifications,
-      audit_logs
+      floors: [],
+      rooms: [],
+      beds: [],
+      residents: [],
+      payments: [],
+      advances: [],
+      expenses: [],
+      staff: [],
+      salary_payments: [],
+      maintenance_requests: [],
+      complaints: [],
+      resident_documents: [],
+      room_assignments: [],
+      whatsapp_messages: [],
+      notifications: [],
+      audit_logs: [
+        {
+          id: `AUD-${Date.now()}`,
+          admin_user: 'Sathwik Pala',
+          action: 'SYSTEM_BOOTSTRAP',
+          entity_type: 'SYSTEM',
+          entity_id: 'HC-HYD-01',
+          details: 'Hanura Casa Property Management Database initialized ready for manual floor and room setup.',
+          timestamp: new Date().toISOString()
+        }
+      ]
     };
   }
 
@@ -1190,22 +898,28 @@ export class LocalDbService {
   }
 
   public removeSampleData(): BootstrapResponse {
-    const { floors, rooms, beds } = generateFloorsAndRooms();
-    // Keep floors and rooms clean with 0 residents and vacant beds
-    beds.forEach(b => {
-      b.status = 'VACANT';
-      b.current_resident_id = null;
-      b.current_resident_name = null;
-    });
-    rooms.forEach(r => {
-      r.occupied_beds_count = 0;
-      r.vacant_beds_count = r.capacity;
-      r.status = 'AVAILABLE';
-      r.beds = beds.filter(b => b.room_id === r.id);
-    });
+    const beds = this.data.beds.map(b => ({
+      ...b,
+      status: 'VACANT' as const,
+      current_resident_id: null,
+      current_resident_name: null
+    }));
+    const rooms = this.data.rooms.map(r => ({
+      ...r,
+      occupied_beds_count: 0,
+      vacant_beds_count: r.capacity,
+      status: 'AVAILABLE' as const,
+      beds: beds.filter(b => b.room_id === r.id)
+    }));
+    const floors = this.data.floors.map(f => ({
+      ...f,
+      occupied_beds: 0,
+      vacant_beds: f.total_beds,
+      rooms: rooms.filter(r => r.floor_id === f.id)
+    }));
 
     this.data = {
-      settings: initialSettings,
+      settings: this.data.settings || initialSettings,
       floors,
       rooms,
       beds,
@@ -1213,7 +927,7 @@ export class LocalDbService {
       payments: [],
       advances: [],
       expenses: [],
-      staff: initialStaffData,
+      staff: this.data.staff || [],
       salary_payments: [],
       maintenance_requests: [],
       complaints: [],
@@ -1228,7 +942,7 @@ export class LocalDbService {
           action: 'SAMPLE_DATA_REMOVED',
           entity_type: 'SYSTEM',
           entity_id: 'HC-HYD-01',
-          details: 'Sample residents, transactions, and ledger entries wiped clean. Space layout preserved.',
+          details: 'Sample residents and transactions wiped clean. Space layout preserved.',
           timestamp: new Date().toISOString()
         }
       ]
