@@ -6,7 +6,6 @@ import {
   Phone,
   CreditCard,
   Send,
-  RefreshCw,
   Save,
   Sparkles,
   Plus,
@@ -15,8 +14,7 @@ import {
   BedDouble,
   Search,
   Check,
-  Edit2,
-  UserX
+  Edit2
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -35,9 +33,6 @@ export const SettingsView: React.FC = () => {
     deleteRoom,
     addBedToRoom,
     decreaseBedInRoom,
-    resetDemoDatabase,
-    clearAllData,
-    removeSampleData,
     addToast
   } = useApp();
 
@@ -284,57 +279,6 @@ export const SettingsView: React.FC = () => {
           <p className="text-xs text-[#8E8E9F] mt-1">
             Configure floors, rooms, and live bed inventory with dynamic capacity scaling and instant global synchronization.
           </p>
-        </div>
-
-        {/* Database Management Fast Actions */}
-        <div className="flex flex-wrap items-center gap-2.5 z-10">
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  'Remove all sample residents, payments, and test data?\n\nThis leaves your configured floors and rooms intact, with all beds reset to vacant and ready for real residents.'
-                )
-              ) {
-                removeSampleData();
-              }
-            }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#FF6F3C]/10 text-[#FF6F3C] hover:bg-[#FF6F3C]/20 border border-[#FF6F3C]/30 text-xs font-bold transition-all shadow-sm"
-          >
-            <UserX className="w-3.5 h-3.5" />
-            <span>Remove Sample Data</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  'Are you sure you want to CLEAR ALL DATA?\n\nThis will remove all rooms, beds, floors, residents, and payments so you can build your custom hostel structure from scratch.'
-                )
-              ) {
-                clearAllData();
-              }
-            }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-bold transition-all shadow-sm"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear All Data (Clean Slate)</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  'Load sample demo dataset? This will populate sample rooms, residents, and payments for testing.'
-                )
-              ) {
-                resetDemoDatabase();
-              }
-            }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#0B0B0C] text-[#8E8E9F] hover:text-white border border-white/[0.08] text-xs font-bold transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Load Sample Data</span>
-          </button>
         </div>
       </div>
 
