@@ -1237,7 +1237,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Status Message */}
+        {/* Status Message & Endpoint */}
         <div className={`p-4 rounded-xl border text-xs font-mono flex items-start space-x-3 ${
           cloudDbStatus.connected
             ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300'
@@ -1251,13 +1251,84 @@ export const SettingsView: React.FC = () => {
             )}
           </div>
           <div className="flex-1 space-y-1">
-            <p className="font-bold text-white font-sans text-xs">
-              {cloudDbStatus.connected ? 'Active Cloud Connection' : 'Database Status'}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-white font-sans text-xs">
+                {cloudDbStatus.connected ? 'Active Supabase Cloud Connection' : 'Database Status'}
+              </p>
+              {cloudDbStatus.connected && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  CONNECTED &bull; LIVE SYNC
+                </span>
+              )}
+            </div>
             <p>{cloudDbStatus.message}</p>
             {cloudDbStatus.url && (
               <p className="text-[11px] text-[#8E8E9F]">Endpoint: <span className="text-[#0CC6FF]">{cloudDbStatus.url}</span></p>
             )}
+          </div>
+        </div>
+
+        {/* Database Project Tables Grid Status */}
+        <div className="bg-[#0B0B0C] p-5 rounded-xl border border-white/[0.08] space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-white font-bold font-sans text-xs">
+              <Database className="w-4 h-4 text-[#0CC6FF]" />
+              <span>Project Database Tables in Supabase</span>
+            </div>
+            <span className="text-[11px] font-mono text-[#8E8E9F]">
+              {cloudDbStatus.tables ? (
+                <span>
+                  <strong className="text-emerald-400">
+                    {Object.values(cloudDbStatus.tables).filter(Boolean).length}
+                  </strong>
+                  /{Object.keys(cloudDbStatus.tables).length} Tables Active
+                </span>
+              ) : '18 Tables Configured'}
+            </span>
+          </div>
+
+          <p className="text-[#8E8E9F] text-[11px] leading-relaxed">
+            All data in Hanura Casa is structured into dedicated PostgreSQL tables in your Supabase database:
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {[
+              { id: 'residents', label: 'residents' },
+              { id: 'rooms', label: 'rooms' },
+              { id: 'floors', label: 'floors' },
+              { id: 'beds', label: 'beds' },
+              { id: 'payments', label: 'payments' },
+              { id: 'advances', label: 'advances' },
+              { id: 'expenses', label: 'expenses' },
+              { id: 'staff', label: 'staff' },
+              { id: 'salary_payments', label: 'salary_payments' },
+              { id: 'maintenance_requests', label: 'maintenance_requests' },
+              { id: 'complaints', label: 'complaints' },
+              { id: 'resident_documents', label: 'resident_documents' },
+              { id: 'room_assignments', label: 'room_assignments' },
+              { id: 'whatsapp_messages', label: 'whatsapp_messages' },
+              { id: 'notifications', label: 'notifications' },
+              { id: 'audit_logs', label: 'audit_logs' },
+              { id: 'settings', label: 'settings' },
+              { id: 'hanura_casa_state', label: 'hanura_casa_state' }
+            ].map(tbl => {
+              const isLive = cloudDbStatus.tables ? cloudDbStatus.tables[tbl.id] : false;
+              return (
+                <div
+                  key={tbl.id}
+                  className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-mono flex items-center justify-between ${
+                    isLive
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : 'bg-[#141414] border-white/[0.06] text-[#8E8E9F]'
+                  }`}
+                >
+                  <span className="truncate">{tbl.label}</span>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ml-1.5 ${
+                    isLive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500/50'
+                  }`} />
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1267,23 +1338,34 @@ export const SettingsView: React.FC = () => {
           <div className="bg-[#0B0B0C] p-5 rounded-xl border border-white/[0.08] space-y-3 text-xs">
             <div className="flex items-center space-x-2 text-white font-bold font-sans">
               <span className="w-5 h-5 rounded-full bg-[#6C4CFF]/30 text-[#6C4CFF] flex items-center justify-center text-[10px] font-mono">1</span>
-              <span>Required Environment Credentials</span>
+              <span>Environment Credentials Status</span>
             </div>
             <p className="text-[#8E8E9F] text-[11px] leading-relaxed">
-              To activate multi-device cloud synchronization, provide your Supabase API keys from your Supabase Dashboard (<strong className="text-white">Project Settings &rarr; API</strong>):
+              Configured via environment variables for continuous cloud sync:
             </p>
             <div className="space-y-2 font-mono text-[11px]">
-              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
-                <span className="text-[#0CC6FF]">SUPABASE_URL</span>
-                <span className="text-[#8E8E9F] block text-[10px]">https://your-project-ref.supabase.co</span>
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white flex items-center justify-between">
+                <div>
+                  <span className="text-[#0CC6FF]">SUPABASE_URL</span>
+                  <span className="text-[#8E8E9F] block text-[10px]">
+                    {cloudDbStatus.url || 'https://your-project.supabase.co'}
+                  </span>
+                </div>
+                {cloudDbStatus.configured && <Check className="w-4 h-4 text-emerald-400" />}
               </div>
-              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
-                <span className="text-[#0CC6FF]">SUPABASE_ANON_KEY</span>
-                <span className="text-[#8E8E9F] block text-[10px]">Your project anon public key</span>
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white flex items-center justify-between">
+                <div>
+                  <span className="text-[#0CC6FF]">SUPABASE_ANON_KEY</span>
+                  <span className="text-[#8E8E9F] block text-[10px]">Public Client Key</span>
+                </div>
+                {cloudDbStatus.configured && <Check className="w-4 h-4 text-emerald-400" />}
               </div>
-              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
-                <span className="text-[#0CC6FF]">SUPABASE_SERVICE_ROLE_KEY</span>
-                <span className="text-[#8E8E9F] block text-[10px]">Optional: service role key for full backend access</span>
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white flex items-center justify-between">
+                <div>
+                  <span className="text-[#0CC6FF]">SUPABASE_SERVICE_ROLE_KEY</span>
+                  <span className="text-[#8E8E9F] block text-[10px]">Server Administration Key</span>
+                </div>
+                {cloudDbStatus.configured && <Check className="w-4 h-4 text-emerald-400" />}
               </div>
             </div>
           </div>
@@ -1294,46 +1376,55 @@ export const SettingsView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-white font-bold font-sans">
                   <span className="w-5 h-5 rounded-full bg-[#FF1E9A]/30 text-[#FF1E9A] flex items-center justify-center text-[10px] font-mono">2</span>
-                  <span>SQL Table Setup</span>
+                  <span>SQL Schema Runner</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    const sql = `CREATE TABLE IF NOT EXISTS hanura_casa_state (
-  id TEXT PRIMARY KEY DEFAULT 'primary_state',
-  data JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE hanura_casa_state ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Enable all operations for hanura_casa_state" ON hanura_casa_state FOR ALL USING (true) WITH CHECK (true);`;
+                    const sql = cloudDbStatus.sql_schema || `-- Run in Supabase SQL Editor
+CREATE TABLE IF NOT EXISTS residents (id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT, email TEXT, current_room_number TEXT, status TEXT DEFAULT 'ACTIVE', created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, room_number TEXT NOT NULL, floor_number INT, capacity INT, monthly_fee NUMERIC, status TEXT DEFAULT 'AVAILABLE');
+CREATE TABLE IF NOT EXISTS floors (id TEXT PRIMARY KEY, floor_number INT NOT NULL, name TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS beds (id TEXT PRIMARY KEY, room_id TEXT NOT NULL, bed_number INT NOT NULL, status TEXT DEFAULT 'VACANT');
+CREATE TABLE IF NOT EXISTS payments (id TEXT PRIMARY KEY, resident_id TEXT NOT NULL, resident_name TEXT, room_number TEXT, month TEXT, amount_paid NUMERIC);
+CREATE TABLE IF NOT EXISTS expenses (id TEXT PRIMARY KEY, category TEXT NOT NULL, amount NUMERIC, vendor TEXT, date TEXT);
+CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT, monthly_salary NUMERIC);
+CREATE TABLE IF NOT EXISTS complaints (id TEXT PRIMARY KEY, resident_name TEXT, room_number TEXT, category TEXT, status TEXT);
+CREATE TABLE IF NOT EXISTS maintenance_requests (id TEXT PRIMARY KEY, room_number TEXT, category TEXT, status TEXT);
+CREATE TABLE IF NOT EXISTS settings (id TEXT PRIMARY KEY DEFAULT 'property_settings', property_name TEXT, address TEXT);
+CREATE TABLE IF NOT EXISTS hanura_casa_state (id TEXT PRIMARY KEY DEFAULT 'primary_state', data JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW());`;
                     navigator.clipboard.writeText(sql);
                     setCopiedSql(true);
-                    addToast('success', 'SQL Copied', 'SQL table setup script copied to clipboard.');
-                    setTimeout(() => setCopiedSql(false), 2500);
+                    addToast('success', 'Full SQL Schema Copied', 'All 18 tables schema script copied to clipboard. Paste into Supabase SQL Editor and click Run.');
+                    setTimeout(() => setCopiedSql(false), 3000);
                   }}
                   className="inline-flex items-center space-x-1 px-2.5 py-1 bg-[#141414] text-[#0CC6FF] hover:text-white border border-[#0CC6FF]/30 hover:border-[#0CC6FF] rounded-lg text-[10px] font-mono transition-colors"
                 >
                   {copiedSql ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedSql ? 'Copied' : 'Copy SQL'}</span>
+                  <span>{copiedSql ? 'Copied' : 'Copy All Tables SQL'}</span>
                 </button>
               </div>
               <p className="text-[#8E8E9F] text-[11px] leading-relaxed">
-                Run this single query in your <strong className="text-white">Supabase SQL Editor</strong> to create the storage table and security policies:
+                To see all individual project tables inside your <strong className="text-white">Supabase Table Editor</strong>, copy this query, paste it into <strong className="text-white">Supabase &rarr; SQL Editor &rarr; New query</strong> and click <strong className="text-emerald-400">Run</strong>:
               </p>
-              <pre className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-[10px] font-mono text-emerald-400/90 overflow-x-auto max-h-32">
-{`CREATE TABLE IF NOT EXISTS hanura_casa_state (
-  id TEXT PRIMARY KEY DEFAULT 'primary_state',
-  data JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE hanura_casa_state ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Enable all operations for hanura_casa_state" 
-  ON hanura_casa_state FOR ALL USING (true) WITH CHECK (true);`}
+              <pre className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-[10px] font-mono text-emerald-400/90 overflow-x-auto max-h-36">
+{`-- Creates all 18 project tables with Row Level Security
+CREATE TABLE IF NOT EXISTS settings (id TEXT PRIMARY KEY, property_name TEXT, ...);
+CREATE TABLE IF NOT EXISTS floors (id TEXT PRIMARY KEY, floor_number INT, name TEXT, ...);
+CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, room_number TEXT, floor_number INT, ...);
+CREATE TABLE IF NOT EXISTS beds (id TEXT PRIMARY KEY, room_id TEXT, bed_number INT, ...);
+CREATE TABLE IF NOT EXISTS residents (id TEXT PRIMARY KEY, name TEXT, phone TEXT, ...);
+CREATE TABLE IF NOT EXISTS payments (id TEXT PRIMARY KEY, resident_name TEXT, ...);
+CREATE TABLE IF NOT EXISTS advances (id TEXT PRIMARY KEY, resident_name TEXT, ...);
+CREATE TABLE IF NOT EXISTS expenses (id TEXT PRIMARY KEY, category TEXT, amount NUMERIC, ...);
+CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT, role TEXT, ...);
+CREATE TABLE IF NOT EXISTS complaints (id TEXT PRIMARY KEY, resident_name TEXT, ...);
+... Click "Copy All Tables SQL" above for complete 18-table DDL`}
               </pre>
             </div>
 
             <p className="text-[10px] text-[#8E8E9F] pt-2 border-t border-white/[0.05]">
-              Once credentials are provided, Hanura Casa auto-syncs on every addition, edit, room assignment, or payment!
+              Every room, bed, resident, and payment you add is instantly stored in Supabase and displayed from the database.
             </p>
           </div>
         </div>

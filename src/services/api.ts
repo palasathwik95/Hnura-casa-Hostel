@@ -754,12 +754,17 @@ export const api = {
     url?: string;
     message: string;
     sql_schema?: string;
+    tableCount?: number;
+    tables?: Record<string, boolean>;
   }> {
     try {
       const res = await fetch('/api/database/status');
       if (res.ok) {
         const json = await res.json();
-        return json.data;
+        return {
+          ...json.data,
+          sql_schema: json.sql_schema || json.data?.sql_schema
+        };
       }
     } catch (err) {
       // Local fallback

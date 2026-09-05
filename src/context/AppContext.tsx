@@ -213,6 +213,8 @@ interface AppContextType {
     url?: string;
     message: string;
     sql_schema?: string;
+    tableCount?: number;
+    tables?: Record<string, boolean>;
   };
   checkCloudDbStatus: () => Promise<void>;
   syncWithCloudDb: (direction?: 'bidirectional' | 'push') => Promise<any>;

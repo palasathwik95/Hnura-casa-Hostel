@@ -31,7 +31,9 @@ import {
 import {
   isSupabaseConfigured,
   fetchCloudState,
-  saveCloudState
+  saveCloudState,
+  fetchAllTablesFromSupabase,
+  syncAllTablesToSupabase
 } from './supabase';
 
 export interface DatabaseSchema {
@@ -118,12 +120,17 @@ class DatabaseService {
         console.log('✅ Hanura Casa database loaded from persistent disk storage with verified unique keys.');
         
         if (isSupabaseConfigured()) {
-          fetchCloudState().then(cloudData => {
-            if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.rooms)) {
-              this.data = cloudData;
-              this.sanitizeAndSyncOccupancy();
-              this.saveToDisk(false);
-              console.log('☁️ Hanura Casa database synchronized from Supabase cloud.');
+          fetchAllTablesFromSupabase().then(cloudData => {
+            if (cloudData && typeof cloudData === 'object') {
+              const hasData = (cloudData.residents && cloudData.residents.length > 0) || 
+                              (cloudData.rooms && cloudData.rooms.length > 0) ||
+                              (cloudData.floors && cloudData.floors.length > 0);
+              if (hasData || (this.data.residents.length === 0 && this.data.rooms.length === 0)) {
+                this.data = { ...this.data, ...cloudData };
+                this.sanitizeAndSyncOccupancy();
+                this.saveToDisk(false);
+                console.log('☁️ Hanura Casa database synchronized from Supabase cloud tables.');
+              }
             }
           }).catch(e => console.warn('[Supabase Sync Error]', e.message));
         }
@@ -139,9 +146,9 @@ class DatabaseService {
     console.log('✅ Hanura Casa database initialized with clean production data.');
 
     if (isSupabaseConfigured()) {
-      fetchCloudState().then(cloudData => {
-        if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.rooms)) {
-          this.data = cloudData;
+      fetchAllTablesFromSupabase().then(cloudData => {
+        if (cloudData && typeof cloudData === 'object') {
+          this.data = { ...this.data, ...cloudData };
           this.sanitizeAndSyncOccupancy();
           this.saveToDisk(false);
           console.log('☁️ Hanura Casa database synchronized from Supabase cloud on initialization.');
@@ -154,8 +161,8 @@ class DatabaseService {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
       if (syncCloud && isSupabaseConfigured()) {
-        saveCloudState(this.data).catch(err => {
-          console.error('[Supabase Cloud Sync Error]:', err.message);
+        syncAllTablesToSupabase(this.data).catch(err => {
+          console.error('[Supabase Cloud Tables Sync Error]:', err.message);
         });
       }
     } catch (err) {
@@ -163,31 +170,40 @@ class DatabaseService {
     }
   }
 
-  public async syncWithSupabase(): Promise<{ success: boolean; message: string }> {
+  public async syncWithSupabase(): Promise<{ success: boolean; message: string; syncedTables?: string[] }> {
     if (!isSupabaseConfigured()) {
       return { success: false, message: 'Supabase credentials not found in environment.' };
     }
-    const cloud = await fetchCloudState();
-    if (cloud) {
-      this.data = cloud;
+    const cloud = await fetchAllTablesFromSupabase();
+    if (cloud && ((cloud.residents && cloud.residents.length > 0) || (cloud.rooms && cloud.rooms.length > 0) || (cloud.floors && cloud.floors.length > 0))) {
+      this.data = { ...this.data, ...cloud };
       this.sanitizeAndSyncOccupancy();
       this.saveToDisk(false);
-      return { success: true, message: 'Successfully pulled latest snapshot from Supabase.' };
+      return { success: true, message: 'Successfully pulled latest data from Supabase cloud database.' };
     } else {
-      const ok = await saveCloudState(this.data);
+      const res = await syncAllTablesToSupabase(this.data);
       return { 
-        success: ok, 
-        message: ok ? 'Successfully pushed local snapshot to Supabase.' : 'Failed to push snapshot to Supabase.' 
+        success: res.success, 
+        message: res.success 
+          ? `Successfully synced data to Supabase (${res.syncedTables.length} tables active: ${res.syncedTables.join(', ')})` 
+          : 'Failed to push records to Supabase.',
+        syncedTables: res.syncedTables
       };
     }
   }
 
-  public async pushToSupabase(): Promise<{ success: boolean; message: string }> {
+  public async pushToSupabase(): Promise<{ success: boolean; message: string; syncedTables?: string[] }> {
     if (!isSupabaseConfigured()) {
       return { success: false, message: 'Supabase is not configured.' };
     }
-    const ok = await saveCloudState(this.data);
-    return { success: ok, message: ok ? 'Successfully synced to Supabase.' : 'Failed to save to Supabase.' };
+    const res = await syncAllTablesToSupabase(this.data);
+    return { 
+      success: res.success, 
+      message: res.success 
+        ? `Successfully pushed all records to Supabase (${res.syncedTables.length} tables updated: ${res.syncedTables.join(', ')})` 
+        : 'Failed to push records to Supabase.',
+      syncedTables: res.syncedTables
+    };
   }
 
   public seedInitialDatabase() {
