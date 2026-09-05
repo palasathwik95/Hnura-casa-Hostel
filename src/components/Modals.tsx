@@ -118,6 +118,9 @@ export const AddResidentModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      const chosenBed = vacantBedsInSelectedRoom.find(b => b.bed_number === Number(selectedBedNumber)) || 
+        currentRoom?.beds?.find(b => b.bed_number === Number(selectedBedNumber));
+
       await createResident({
         name,
         phone,
@@ -134,9 +137,18 @@ export const AddResidentModal: React.FC = () => {
         emergency_contact: emergencyContact,
         permanent_address: permanentAddress,
         room_id: selectedRoomId,
+        current_room_id: selectedRoomId,
+        current_room_number: currentRoom?.room_number || '',
+        floor_number: currentRoom?.floor_number ?? null,
+        sharing_type: currentRoom?.sharing_type || '',
+        bed_id: chosenBed?.id,
+        current_bed_id: chosenBed?.id,
         bed_number: Number(selectedBedNumber),
+        current_bed_number: Number(selectedBedNumber),
         monthly_fee: Number(monthlyFee),
         initial_advance: Number(initialAdvance),
+        advance_amount: Number(initialAdvance),
+        security_deposit_amount: Number(initialAdvance),
         photo_url: photoUrl
       });
       setAddResidentModalOpen(false);

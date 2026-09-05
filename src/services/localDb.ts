@@ -182,12 +182,46 @@ export class LocalDbService {
   }
 
   private sanitizeAndSyncOccupancy() {
+    // 0. Auto-heal active residents with their rooms and beds
+    if (Array.isArray(this.data.residents)) {
+      this.data.residents.forEach(res => {
+        if (res.status === 'ACTIVE') {
+          const room = (this.data.rooms || []).find(r =>
+            (res.current_room_id && r.id === res.current_room_id) ||
+            (res.current_room_number && r.room_number === res.current_room_number)
+          );
+          if (room) {
+            res.current_room_id = room.id;
+            res.current_room_number = room.room_number;
+            if (res.floor_number === null || res.floor_number === undefined) {
+              res.floor_number = room.floor_number;
+            }
+            if (!res.sharing_type) {
+              res.sharing_type = room.sharing_type;
+            }
+            if (res.current_bed_id || res.current_bed_number !== undefined) {
+              const bNum = Number(res.current_bed_number);
+              const bed = (room.beds || []).find(b =>
+                (res.current_bed_id && b.id === res.current_bed_id) ||
+                (!isNaN(bNum) && b.bed_number === bNum)
+              );
+              if (bed) {
+                res.current_bed_id = bed.id;
+                res.current_bed_number = bed.bed_number;
+              }
+            }
+          }
+        }
+      });
+    }
+
     const activeResidents = this.data.residents.filter(r => r.status === 'ACTIVE');
 
     this.data.beds.forEach(bed => {
       const resident = activeResidents.find(r =>
-        r.current_bed_id === bed.id ||
-        (r.current_room_id === bed.room_id && (r.current_bed_number === bed.bed_number || r.current_bed_id === bed.id))
+        (r.current_bed_id && r.current_bed_id === bed.id) ||
+        (r.current_room_id === bed.room_id && (r.current_bed_number === bed.bed_number || r.current_bed_id === bed.id)) ||
+        (r.current_room_number === bed.room_number && (r.current_bed_number === bed.bed_number || r.current_bed_id === bed.id))
       );
       if (resident) {
         bed.status = 'OCCUPIED';
@@ -201,7 +235,24 @@ export class LocalDbService {
     });
 
     this.data.rooms.forEach(room => {
-      const roomBeds = this.data.beds.filter(b => b.room_id === room.id);
+      const roomBeds = this.data.beds.filter(b => b.room_id === room.id || b.room_number === room.room_number);
+      roomBeds.forEach(b => {
+        const assigned = activeResidents.find(res =>
+          (res.current_bed_id && res.current_bed_id === b.id) ||
+          (res.current_room_id === room.id && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id)) ||
+          (res.current_room_number === room.room_number && (res.current_bed_number === b.bed_number || res.current_bed_id === b.id))
+        );
+        if (assigned) {
+          b.status = 'OCCUPIED';
+          b.current_resident_id = assigned.id;
+          b.current_resident_name = assigned.name;
+        } else {
+          b.status = 'VACANT';
+          b.current_resident_id = null;
+          b.current_resident_name = null;
+        }
+      });
+
       const occupied = roomBeds.filter(b => b.status === 'OCCUPIED').length;
       room.occupied_beds_count = occupied;
       room.vacant_beds_count = Math.max(0, room.capacity - occupied);
@@ -214,14 +265,39 @@ export class LocalDbService {
     });
 
     this.data.floors.forEach(floor => {
-      floor.rooms = this.data.rooms.filter(r => r.floor_id === floor.id || r.floor_number === floor.floor_number);
+      const floorRooms = this.data.rooms.filter(r => r.floor_id === floor.id || r.floor_number === floor.floor_number);
+      floor.rooms = floorRooms;
+      floor.total_rooms = floorRooms.length;
+      floor.total_beds = floorRooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
+      floor.occupied_beds = floorRooms.reduce((sum, r) => sum + (r.occupied_beds_count || 0), 0);
+      floor.vacant_beds = Math.max(0, floor.total_beds - floor.occupied_beds);
     });
   }
 
   public createResident(payload: any): { data: Resident; metrics: DashboardMetrics } {
     const id = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
-    const room = this.data.rooms.find(r => r.id === payload.current_room_id || r.room_number === payload.current_room_number);
-    const bed = this.data.beds.find(b => b.id === payload.current_bed_id);
+    const targetRoomId = payload.current_room_id || payload.room_id || payload.target_room_id;
+    const targetRoomNumber = payload.current_room_number || payload.room_number;
+    const room = this.data.rooms.find(r => 
+      (targetRoomId && (r.id === targetRoomId || r.room_number === targetRoomId)) ||
+      (targetRoomNumber && (r.room_number === targetRoomNumber || r.id === targetRoomNumber))
+    );
+
+    let bed: Bed | null = null;
+    if (room) {
+      const targetBedId = payload.current_bed_id || payload.bed_id || payload.target_bed_id;
+      const targetBedNum = payload.current_bed_number !== undefined ? Number(payload.current_bed_number) : (payload.bed_number !== undefined ? Number(payload.bed_number) : undefined);
+
+      if (targetBedId) {
+        bed = (room.beds || []).find(b => b.id === targetBedId) || this.data.beds.find(b => b.id === targetBedId) || null;
+      }
+      if (!bed && targetBedNum !== undefined && !isNaN(targetBedNum)) {
+        bed = (room.beds || []).find(b => b.bed_number === targetBedNum) || this.data.beds.find(b => (b.room_id === room.id || b.room_number === room.room_number) && b.bed_number === targetBedNum) || null;
+      }
+      if (!bed) {
+        bed = (room.beds || []).find(b => b.status === 'VACANT') || this.data.beds.find(b => (b.room_id === room.id || b.room_number === room.room_number) && b.status === 'VACANT') || null;
+      }
+    }
 
     const newRes: Resident = {
       id,
@@ -239,41 +315,54 @@ export class LocalDbService {
       emergency_contact: payload.emergency_contact || payload.parent_phone || '',
       permanent_address: payload.permanent_address || '',
       joining_date: payload.joining_date || new Date().toISOString().split('T')[0],
-      floor_number: room ? room.floor_number : null,
+      floor_number: room ? room.floor_number : (payload.floor_number ?? null),
       vacated_date: null,
       vacated_reason: null,
       status: 'ACTIVE',
-      monthly_fee: Number(payload.monthly_fee) || 6000,
-      sharing_type: payload.sharing_type || '4-Sharing',
+      monthly_fee: Number(payload.monthly_fee) || (room ? room.monthly_fee : 6000),
+      sharing_type: payload.sharing_type || (room ? room.sharing_type : '4-Sharing'),
       current_room_id: room ? room.id : null,
       current_room_number: room ? room.room_number : null,
       current_bed_id: bed ? bed.id : null,
-      current_bed_number: bed ? bed.bed_number : (payload.current_bed_number ? Number(payload.current_bed_number) : null),
+      current_bed_number: bed ? bed.bed_number : (payload.bed_number ? Number(payload.bed_number) : 1),
       kyc_status: 'SUBMITTED',
       kyc_completion: 60,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
+    if (bed) {
+      bed.status = 'OCCUPIED';
+      bed.current_resident_id = newRes.id;
+      bed.current_resident_name = newRes.name;
+
+      const globalBed = this.data.beds.find(b => b.id === bed!.id);
+      if (globalBed) {
+        globalBed.status = 'OCCUPIED';
+        globalBed.current_resident_id = newRes.id;
+        globalBed.current_resident_name = newRes.name;
+      }
+    }
+
     this.data.residents.push(newRes);
 
-    if (payload.security_deposit_amount) {
-      const deposit = Number(payload.security_deposit_amount);
+    const advanceAmount = Number(payload.initial_advance || payload.advance_amount || payload.security_deposit_amount || 0);
+    if (advanceAmount > 0) {
       this.data.advances.push({
         id: `ADV-${newRes.id}`,
         resident_id: newRes.id,
         resident_name: newRes.name,
-        opening_advance: deposit,
-        current_advance: deposit,
+        opening_advance: advanceAmount,
+        current_advance: advanceAmount,
         transactions: [
           {
             id: `ADV-TXN-${newRes.id}-01`,
             type: 'DEPOSIT',
-            amount: deposit,
+            amount: advanceAmount,
             date: newRes.joining_date,
             reference: `ADV-INIT-${newRes.id}`,
             notes: 'Security deposit received at admission',
-            balance_after: deposit
+            balance_after: advanceAmount
           }
         ]
       });

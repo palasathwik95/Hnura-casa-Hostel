@@ -2,6 +2,11 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { db } from './server/db';
+import {
+  testSupabaseConnection,
+  SUPABASE_SQL_SCHEMA,
+  isSupabaseConfigured
+} from './server/supabase';
 
 async function startServer() {
   const app = express();
@@ -381,6 +386,47 @@ async function startServer() {
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
+  });
+
+  // ==========================================
+  // SUPABASE CLOUD DATABASE SYNC & STATUS
+  // ==========================================
+  app.get('/api/database/status', async (req, res) => {
+    try {
+      const status = await testSupabaseConnection();
+      res.json({
+        success: true,
+        data: status,
+        isConfigured: isSupabaseConfigured(),
+        sql_schema: SUPABASE_SQL_SCHEMA
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post('/api/database/sync', async (req, res) => {
+    try {
+      const direction = req.body?.direction || 'bidirectional';
+      let result;
+      if (direction === 'push') {
+        result = await db.pushToSupabase();
+      } else {
+        result = await db.syncWithSupabase();
+      }
+      const snapshot = db.getSnapshot();
+      const metrics = db.getDashboardMetrics();
+      res.json({ success: result.success, message: result.message, data: { ...snapshot, metrics } });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.get('/api/database/schema', (req, res) => {
+    res.json({
+      success: true,
+      sql: SUPABASE_SQL_SCHEMA
+    });
   });
 
   // ==========================================

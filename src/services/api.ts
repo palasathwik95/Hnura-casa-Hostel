@@ -746,5 +746,69 @@ export const api = {
       isLocalMode = true;
       return localDb.removeSampleData();
     }
+  },
+
+  async getDatabaseStatus(): Promise<{
+    connected: boolean;
+    configured: boolean;
+    url?: string;
+    message: string;
+    sql_schema?: string;
+  }> {
+    try {
+      const res = await fetch('/api/database/status');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      // Local fallback
+    }
+    return {
+      connected: false,
+      configured: false,
+      message: 'Running in Local Storage mode. Configure Supabase in Settings to sync across all devices.'
+    };
+  },
+
+  async syncDatabase(direction: 'bidirectional' | 'push' = 'bidirectional'): Promise<{
+    success: boolean;
+    message: string;
+    data?: BootstrapResponse;
+  }> {
+    try {
+      const res = await fetch('/api/database/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.message || 'Database sync failed.' };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Network error during database sync.' };
+    }
+  },
+
+  async getDatabaseSchema(): Promise<string> {
+    try {
+      const res = await fetch('/api/database/schema');
+      if (res.ok) {
+        const json = await res.json();
+        return json.sql;
+      }
+    } catch (err) {
+      // Fallback
+    }
+    return `-- SQL Schema for Supabase
+CREATE TABLE IF NOT EXISTS hanura_casa_state (
+  id TEXT PRIMARY KEY DEFAULT 'primary_state',
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE hanura_casa_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all operations for hanura_casa_state" ON hanura_casa_state FOR ALL USING (true) WITH CHECK (true);`;
   }
 };

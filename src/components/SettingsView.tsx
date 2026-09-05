@@ -14,7 +14,13 @@ import {
   BedDouble,
   Search,
   Check,
-  Edit2
+  Edit2,
+  Database,
+  RefreshCw,
+  Cloud,
+  Copy,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -33,8 +39,14 @@ export const SettingsView: React.FC = () => {
     deleteRoom,
     addBedToRoom,
     decreaseBedInRoom,
-    addToast
+    addToast,
+    cloudDbStatus,
+    checkCloudDbStatus,
+    syncWithCloudDb
   } = useApp();
+
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   // Settings State
   const [propertyName, setPropertyName] = useState(settings?.property_name || 'Hanura Casa Luxury Living');
@@ -1152,6 +1164,180 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: SUPABASE CLOUD DATABASE INTEGRATION (CROSS-DEVICE SYNC) */}
+      {/* ========================================================================= */}
+      <div id="supabase-cloud-settings" className="bg-[#141414] rounded-2xl border border-white/[0.08] p-6 lg:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0CC6FF]/20 to-[#6C4CFF]/20 border border-[#0CC6FF]/40 flex items-center justify-center text-[#0CC6FF] shadow-md">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-heading font-extrabold text-white">
+                  Supabase Cloud Database & Cross-Device Synchronization
+                </h3>
+                {cloudDbStatus.connected ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+                    </span>
+                    Connected & Live
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    {cloudDbStatus.configured ? 'Setup Required' : 'Awaiting Credentials'}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#8E8E9F] mt-0.5">
+                Keep room inventory, resident records, payments, and metrics identical across any phone, tablet, or laptop.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              disabled={isSyncingCloud}
+              onClick={async () => {
+                setIsSyncingCloud(true);
+                try {
+                  await syncWithCloudDb('bidirectional');
+                } finally {
+                  setIsSyncingCloud(false);
+                }
+              }}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#0B0B0C] hover:bg-[#1f1f23] text-white border border-white/[0.08] hover:border-[#0CC6FF]/40 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#0CC6FF] ${isSyncingCloud ? 'animate-spin' : ''}`} />
+              <span>Sync Cloud</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isSyncingCloud}
+              onClick={async () => {
+                setIsSyncingCloud(true);
+                try {
+                  await syncWithCloudDb('push');
+                } finally {
+                  setIsSyncingCloud(false);
+                }
+              }}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-[#0CC6FF]/20 to-[#6C4CFF]/20 hover:from-[#0CC6FF]/30 hover:to-[#6C4CFF]/30 text-[#0CC6FF] border border-[#0CC6FF]/40 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>Push Local to Cloud</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Status Message */}
+        <div className={`p-4 rounded-xl border text-xs font-mono flex items-start space-x-3 ${
+          cloudDbStatus.connected
+            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300'
+            : 'bg-[#0B0B0C] border-white/[0.08] text-[#8E8E9F]'
+        }`}>
+          <div className="mt-0.5 shrink-0">
+            {cloudDbStatus.connected ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Database className="w-4 h-4 text-amber-400" />
+            )}
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="font-bold text-white font-sans text-xs">
+              {cloudDbStatus.connected ? 'Active Cloud Connection' : 'Database Status'}
+            </p>
+            <p>{cloudDbStatus.message}</p>
+            {cloudDbStatus.url && (
+              <p className="text-[11px] text-[#8E8E9F]">Endpoint: <span className="text-[#0CC6FF]">{cloudDbStatus.url}</span></p>
+            )}
+          </div>
+        </div>
+
+        {/* Setup Instructions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Credentials Guide */}
+          <div className="bg-[#0B0B0C] p-5 rounded-xl border border-white/[0.08] space-y-3 text-xs">
+            <div className="flex items-center space-x-2 text-white font-bold font-sans">
+              <span className="w-5 h-5 rounded-full bg-[#6C4CFF]/30 text-[#6C4CFF] flex items-center justify-center text-[10px] font-mono">1</span>
+              <span>Required Environment Credentials</span>
+            </div>
+            <p className="text-[#8E8E9F] text-[11px] leading-relaxed">
+              To activate multi-device cloud synchronization, provide your Supabase API keys from your Supabase Dashboard (<strong className="text-white">Project Settings &rarr; API</strong>):
+            </p>
+            <div className="space-y-2 font-mono text-[11px]">
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
+                <span className="text-[#0CC6FF]">SUPABASE_URL</span>
+                <span className="text-[#8E8E9F] block text-[10px]">https://your-project-ref.supabase.co</span>
+              </div>
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
+                <span className="text-[#0CC6FF]">SUPABASE_ANON_KEY</span>
+                <span className="text-[#8E8E9F] block text-[10px]">Your project anon public key</span>
+              </div>
+              <div className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-white">
+                <span className="text-[#0CC6FF]">SUPABASE_SERVICE_ROLE_KEY</span>
+                <span className="text-[#8E8E9F] block text-[10px]">Optional: service role key for full backend access</span>
+              </div>
+            </div>
+          </div>
+
+          {/* SQL Setup Script */}
+          <div className="bg-[#0B0B0C] p-5 rounded-xl border border-white/[0.08] space-y-3 text-xs flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-white font-bold font-sans">
+                  <span className="w-5 h-5 rounded-full bg-[#FF1E9A]/30 text-[#FF1E9A] flex items-center justify-center text-[10px] font-mono">2</span>
+                  <span>SQL Table Setup</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sql = `CREATE TABLE IF NOT EXISTS hanura_casa_state (
+  id TEXT PRIMARY KEY DEFAULT 'primary_state',
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE hanura_casa_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all operations for hanura_casa_state" ON hanura_casa_state FOR ALL USING (true) WITH CHECK (true);`;
+                    navigator.clipboard.writeText(sql);
+                    setCopiedSql(true);
+                    addToast('success', 'SQL Copied', 'SQL table setup script copied to clipboard.');
+                    setTimeout(() => setCopiedSql(false), 2500);
+                  }}
+                  className="inline-flex items-center space-x-1 px-2.5 py-1 bg-[#141414] text-[#0CC6FF] hover:text-white border border-[#0CC6FF]/30 hover:border-[#0CC6FF] rounded-lg text-[10px] font-mono transition-colors"
+                >
+                  {copiedSql ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedSql ? 'Copied' : 'Copy SQL'}</span>
+                </button>
+              </div>
+              <p className="text-[#8E8E9F] text-[11px] leading-relaxed">
+                Run this single query in your <strong className="text-white">Supabase SQL Editor</strong> to create the storage table and security policies:
+              </p>
+              <pre className="p-2.5 rounded-lg bg-[#141414] border border-white/[0.05] text-[10px] font-mono text-emerald-400/90 overflow-x-auto max-h-32">
+{`CREATE TABLE IF NOT EXISTS hanura_casa_state (
+  id TEXT PRIMARY KEY DEFAULT 'primary_state',
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE hanura_casa_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all operations for hanura_casa_state" 
+  ON hanura_casa_state FOR ALL USING (true) WITH CHECK (true);`}
+              </pre>
+            </div>
+
+            <p className="text-[10px] text-[#8E8E9F] pt-2 border-t border-white/[0.05]">
+              Once credentials are provided, Hanura Casa auto-syncs on every addition, edit, room assignment, or payment!
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

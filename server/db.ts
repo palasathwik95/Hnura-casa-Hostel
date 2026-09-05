@@ -28,6 +28,11 @@ import {
   initialMaintenanceData,
   initialSettings
 } from './initialData';
+import {
+  isSupabaseConfigured,
+  fetchCloudState,
+  saveCloudState
+} from './supabase';
 
 export interface DatabaseSchema {
   settings: SystemSettings;
@@ -109,8 +114,19 @@ class DatabaseService {
         }
 
         this.sanitizeAndSyncOccupancy();
-        this.saveToDisk();
+        this.saveToDisk(false);
         console.log('✅ Hanura Casa database loaded from persistent disk storage with verified unique keys.');
+        
+        if (isSupabaseConfigured()) {
+          fetchCloudState().then(cloudData => {
+            if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.rooms)) {
+              this.data = cloudData;
+              this.sanitizeAndSyncOccupancy();
+              this.saveToDisk(false);
+              console.log('☁️ Hanura Casa database synchronized from Supabase cloud.');
+            }
+          }).catch(e => console.warn('[Supabase Sync Error]', e.message));
+        }
         return;
       } catch (err) {
         console.error('⚠️ Could not parse existing db file, reseeding fresh dataset...', err);
@@ -121,14 +137,57 @@ class DatabaseService {
     this.sanitizeAndSyncOccupancy();
     this.saveToDisk();
     console.log('✅ Hanura Casa database initialized with clean production data.');
+
+    if (isSupabaseConfigured()) {
+      fetchCloudState().then(cloudData => {
+        if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.rooms)) {
+          this.data = cloudData;
+          this.sanitizeAndSyncOccupancy();
+          this.saveToDisk(false);
+          console.log('☁️ Hanura Casa database synchronized from Supabase cloud on initialization.');
+        }
+      }).catch(e => console.warn('[Supabase Initial Sync Error]', e.message));
+    }
   }
 
-  private saveToDisk() {
+  private saveToDisk(syncCloud: boolean = true) {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+      if (syncCloud && isSupabaseConfigured()) {
+        saveCloudState(this.data).catch(err => {
+          console.error('[Supabase Cloud Sync Error]:', err.message);
+        });
+      }
     } catch (err) {
       console.error('Failed to write to db file:', err);
     }
+  }
+
+  public async syncWithSupabase(): Promise<{ success: boolean; message: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Supabase credentials not found in environment.' };
+    }
+    const cloud = await fetchCloudState();
+    if (cloud) {
+      this.data = cloud;
+      this.sanitizeAndSyncOccupancy();
+      this.saveToDisk(false);
+      return { success: true, message: 'Successfully pulled latest snapshot from Supabase.' };
+    } else {
+      const ok = await saveCloudState(this.data);
+      return { 
+        success: ok, 
+        message: ok ? 'Successfully pushed local snapshot to Supabase.' : 'Failed to push snapshot to Supabase.' 
+      };
+    }
+  }
+
+  public async pushToSupabase(): Promise<{ success: boolean; message: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Supabase is not configured.' };
+    }
+    const ok = await saveCloudState(this.data);
+    return { success: ok, message: ok ? 'Successfully synced to Supabase.' : 'Failed to save to Supabase.' };
   }
 
   public seedInitialDatabase() {
@@ -1023,6 +1082,7 @@ class DatabaseService {
     target_room_id?: string;
     target_bed_id?: string;
     room_id?: string;
+    room_number?: string;
     bed_id?: string;
     bed_number?: number;
     advance_amount?: number;
@@ -1033,20 +1093,27 @@ class DatabaseService {
     let bed: Bed | null = null;
 
     const targetRoomId = residentData.target_room_id || residentData.current_room_id || residentData.room_id;
+    const targetRoomNumber = residentData.current_room_number || residentData.room_number;
     const targetBedId = residentData.target_bed_id || residentData.current_bed_id || residentData.bed_id;
-    const targetBedNum = residentData.current_bed_number || residentData.bed_number;
+    const targetBedNum = residentData.current_bed_number !== undefined ? residentData.current_bed_number : residentData.bed_number;
 
-    if (targetRoomId) {
-      room = this.data.rooms.find(r => r.id === targetRoomId) || null;
+    if (targetRoomId || targetRoomNumber) {
+      room = this.data.rooms.find(r => 
+        (targetRoomId && (r.id === targetRoomId || r.room_number === targetRoomId)) ||
+        (targetRoomNumber && (r.room_number === targetRoomNumber || r.id === targetRoomNumber))
+      ) || null;
+
       if (room) {
         if (targetBedId) {
-          bed = room.beds.find(b => b.id === targetBedId) || null;
+          bed = (room.beds || []).find(b => b.id === targetBedId) || this.data.beds.find(b => b.id === targetBedId) || null;
         }
         if (!bed && targetBedNum !== undefined) {
-          bed = room.beds.find(b => b.bed_number === Number(targetBedNum)) || null;
+          bed = (room.beds || []).find(b => b.bed_number === Number(targetBedNum)) || 
+                this.data.beds.find(b => (b.room_id === room.id || b.room_number === room.room_number) && b.bed_number === Number(targetBedNum)) || null;
         }
         if (!bed) {
-          bed = room.beds.find(b => b.status === 'VACANT') || null;
+          bed = (room.beds || []).find(b => b.status === 'VACANT') || 
+                this.data.beds.find(b => (b.room_id === room.id || b.room_number === room.room_number) && b.status === 'VACANT') || null;
         }
       }
     }
@@ -2002,6 +2069,39 @@ class DatabaseService {
   }
 
   public sanitizeAndSyncOccupancy(): void {
+    // 0. Auto-heal active residents with their rooms and beds
+    if (Array.isArray(this.data.residents)) {
+      this.data.residents.forEach(res => {
+        if (res.status === 'ACTIVE') {
+          const room = (this.data.rooms || []).find(r =>
+            (res.current_room_id && r.id === res.current_room_id) ||
+            (res.current_room_number && r.room_number === res.current_room_number)
+          );
+          if (room) {
+            res.current_room_id = room.id;
+            res.current_room_number = room.room_number;
+            if (res.floor_number === null || res.floor_number === undefined) {
+              res.floor_number = room.floor_number;
+            }
+            if (!res.sharing_type) {
+              res.sharing_type = room.sharing_type;
+            }
+            if (res.current_bed_id || res.current_bed_number !== undefined) {
+              const bNum = Number(res.current_bed_number);
+              const bed = (room.beds || []).find(b =>
+                (res.current_bed_id && b.id === res.current_bed_id) ||
+                (!isNaN(bNum) && b.bed_number === bNum)
+              );
+              if (bed) {
+                res.current_bed_id = bed.id;
+                res.current_bed_number = bed.bed_number;
+              }
+            }
+          }
+        }
+      });
+    }
+
     const activeResidents = Array.isArray(this.data.residents)
       ? this.data.residents.filter(r => r.status === 'ACTIVE')
       : [];
@@ -2010,8 +2110,9 @@ class DatabaseService {
     if (Array.isArray(this.data.beds)) {
       this.data.beds.forEach(b => {
         const assigned = activeResidents.find(r => 
-          r.current_bed_id === b.id ||
-          (r.current_room_id === b.room_id && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
+          (r.current_bed_id && r.current_bed_id === b.id) ||
+          (r.current_room_id === b.room_id && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id)) ||
+          (r.current_room_number === b.room_number && (r.current_bed_number === b.bed_number || r.current_bed_id === b.id))
         );
         if (assigned) {
           b.status = 'OCCUPIED';

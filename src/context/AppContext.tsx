@@ -205,6 +205,17 @@ interface AppContextType {
   resetDemoDatabase: () => Promise<void>;
   clearAllData: () => Promise<void>;
   removeSampleData: () => Promise<void>;
+
+  // Cloud Database (Supabase)
+  cloudDbStatus: {
+    connected: boolean;
+    configured: boolean;
+    url?: string;
+    message: string;
+    sql_schema?: string;
+  };
+  checkCloudDbStatus: () => Promise<void>;
+  syncWithCloudDb: (direction?: 'bidirectional' | 'push') => Promise<any>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -326,9 +337,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [applySnapshot]);
 
+  const [cloudDbStatus, setCloudDbStatus] = useState<{
+    connected: boolean;
+    configured: boolean;
+    url?: string;
+    message: string;
+    sql_schema?: string;
+  }>({
+    connected: false,
+    configured: false,
+    message: 'Checking cloud database status...'
+  });
+
+  const checkCloudDbStatus = useCallback(async () => {
+    try {
+      const status = await api.getDatabaseStatus();
+      setCloudDbStatus(status);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const syncWithCloudDb = useCallback(async (direction: 'bidirectional' | 'push' = 'bidirectional') => {
+    try {
+      const res = await api.syncDatabase(direction);
+      if (res.success && res.data) {
+        applySnapshot(res.data);
+        addToast('success', 'Database Synchronized', res.message || 'Data synchronized with Supabase.');
+      } else {
+        addToast(res.success ? 'info' : 'warning', 'Database Sync', res.message);
+      }
+      await checkCloudDbStatus();
+      return res;
+    } catch (err: any) {
+      addToast('error', 'Sync Failed', err.message);
+      throw err;
+    }
+  }, [applySnapshot, addToast, checkCloudDbStatus]);
+
   useEffect(() => {
     refreshData();
-  }, [refreshData]);
+    checkCloudDbStatus();
+  }, [refreshData, checkCloudDbStatus]);
 
   // ACTION: Record Payment
   const recordPayment = async (payload: any) => {
@@ -949,7 +999,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateSettings,
         resetDemoDatabase,
         clearAllData,
-        removeSampleData
+        removeSampleData,
+        cloudDbStatus,
+        checkCloudDbStatus,
+        syncWithCloudDb
       }}
     >
       {children}

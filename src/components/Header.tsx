@@ -29,7 +29,8 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
     setRecordPaymentModalOpen,
     setAddExpenseModalOpen,
     setSelectedResidentId,
-    metrics
+    metrics,
+    cloudDbStatus
   } = useApp();
 
   const [notifOpen, setNotifOpen] = useState(false);
@@ -91,14 +92,29 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
             <p className="text-lg lg:text-2xl font-heading font-bold text-white tracking-tight">
               {getPageTitle()}
             </p>
-            {activeTab === 'dashboard' && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-[#141414] text-[#0CC6FF] border border-[#0CC6FF]/30 font-mono">
+            {cloudDbStatus.connected ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                title="Supabase Cloud Database Connected - Click to view settings"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono hover:bg-emerald-500/20 transition-colors"
+              >
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0CC6FF] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#0CC6FF]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
                 </span>
-                LIVE SYNC
-              </span>
+                CLOUD SYNCED
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                title="Supabase Cloud Database - Click to configure multi-device sync"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-[#141414] text-[#8E8E9F] border border-white/[0.08] font-mono hover:border-[#0CC6FF]/40 hover:text-white transition-colors"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                CONNECT SUPABASE
+              </button>
             )}
           </div>
         </div>
