@@ -1,5 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { withSupabase, createSupabaseContext } from '@supabase/server';
 import { DatabaseSchema } from '../src/types';
+
+export { withSupabase, createSupabaseContext };
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -26,10 +29,24 @@ export const PROJECT_TABLE_NAMES = [
 
 export function getSupabaseCredentials() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 
-              process.env.SUPABASE_ANON_KEY || 
-              process.env.VITE_SUPABASE_ANON_KEY || '';
-  return { url: url.trim(), key: key.trim() };
+  
+  const rawSecret = process.env.SUPABASE_SECRET_KEY || '';
+  const rawServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const rawPublishable = process.env.SUPABASE_PUBLISHABLE_KEY || '';
+  const rawAnon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+  // Filter out any masked placeholder values (e.g. •••••••)
+  const secretKey = (rawSecret && !rawSecret.includes('•')) ? rawSecret : rawServiceRole;
+  const publishableKey = (rawPublishable && !rawPublishable.includes('•')) ? rawPublishable : rawAnon;
+  const key = secretKey || publishableKey || '';
+
+  return {
+    url: url.trim(),
+    key: key.trim(),
+    publishableKey: publishableKey.trim(),
+    secretKey: secretKey.trim(),
+    jwksUrl: (process.env.SUPABASE_JWKS_URL || '').trim()
+  };
 }
 
 export function isSupabaseConfigured(): boolean {
